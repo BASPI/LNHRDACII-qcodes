@@ -11,6 +11,7 @@ If you want the latest version of our driver, download the files from the main b
 
 ## Further Documentation
 See https://www.baspi.ch/manuals for more information on the LNHR DAC II.
+
 See https://microsoft.github.io/Qcodes/ for more information about the QCoDeS framework.
 
-If you have purchased an LNHR DAC II, you have received an USB stick, which includes the full documentation of the LNHR DAC II. Please be aware, that the official documentation of the LNHR DAC does not include any information on how to use the DAC with the QCoDeS framework. However, since the QCoDeS driver of the LNHR DAC II allows for full control of the device and is mainly an interface, the general documentation on the LNHR DAC II is still useful. The general documentation includes documentation about all commands available to the LNHR DAC II.
+If you have purchased an LNHR DAC II, you have received an USB stick, which includes the full documentation of the LNHR DAC II. Please be aware, that the official documentation of the LNHR DAC does not include any specific information on how to use the DAC with the QCoDeS framework. However, since the QCoDeS driver of the LNHR DAC II allows for full control of the device and is mainly an interface, the general documentation on the LNHR DAC II is still useful. The general documentation includes documentation about all commands available to the LNHR DAC II.
