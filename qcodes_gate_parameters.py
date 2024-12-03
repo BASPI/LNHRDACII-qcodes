@@ -20,6 +20,9 @@ from typing import Optional, List
 # class ----------------------------------------------------------------
 
 class GateParameter(Parameter):
+    """
+    This class helps to set an d sweep DC voltages
+    """
     def __init__(self, param, name, value_range, unit: Optional[str]='V', 
                  scaling: Optional[float]=1, offset: Optional[float]=0):
         
@@ -45,6 +48,9 @@ class GateParameter(Parameter):
 # class ----------------------------------------------------------------
 
 class VirtualGateParameter(Parameter):
+    """
+    This class is used to combine multiple GateParameter objects
+    """
     def __init__(self, name, params, set_scaling, 
                  offsets: Optional[List[float]]=None, 
                  get_scaling: Optional[float]=1 ):
