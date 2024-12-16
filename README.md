@@ -1,10 +1,15 @@
-# Experimental Pre-Release of the LNHR DAC II QCoDeS Driver
-This repository contains the QCoDeS driver for the Basel Precision Instruments *Low Noise High Resolution Digital to Analog Converter II* or *LNHR DAC II*. Additionally there are some examples of to use the driver.
+# LNHR DAC II QCoDeS Driver
+This repository contains the QCoDeS driver for the Basel Precision Instruments *Low Noise High Resolution Digital to Analog Converter II* or *LNHR DAC II*. Additionally there are some examples on how to use the driver.
 
 ## Latest Release
-This is an experimental version of the LNHR DAC II QCoDeS driver. Not everything is extensively tested. All code may be subject to change.
+The latest version of this driver is v0.1.1.
 
-We are currently working on an improved version of the driver. Once it releases the newest features and changes will be listed here.
+**What's new?**
+- We greatly improved the code documentation.
+- Names of files and methods have been changed to better fall in line with the general QCoDeS guidelines, while the old method names still do work.
+- The `write` method has been improved. It now does a simple handshaking with the DAC and raises an error if the DAC could not process a command. It also implements some necessary delays to avoid race conditions.
+
+This version of the driver aims to be a one by one replacement for the original version of the driver. Make sure to change the the filenames in the import section of your code. If you have any issues with that, please use the GitHub issue tracker to report it, or get in contact with us.
 
 ## Setup
 This code is an improved version of the original Basel Precision Instruments LNHR DAC II QCoDeS driver. Everything should be backwards compatible. `baspi_lnhrdac2.py`replaces the old `DAC_1060_v060723.py`and `qcodes_gate_parameters.py`replaces the old `Parameterhelp_240709.py`. Additionally `qcodes_examples.ipynb` gives some examples on how the driver can be used. Copy the files into your project folder and change the filenames in the import section of your code to run this new experimental pre-release of the QCoDeS driver.

@@ -1,6 +1,6 @@
 # ----------------------------------------------------------------------------------------------------------------------------------------------
 # LNHR DAC II Telnet driver (Python)
-# v0.1.0
+# v0.1.1
 # Copyright (c) Basel Precision Instruments GmbH (2024)
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the 
@@ -256,10 +256,10 @@ class SP1060(VisaInstrument, SP1060Reader):
         # handshaking: check for succesful acknowledge/ valid answer
         if not "?" in command:
             if answer != "0":
-                warn(f"Command ({command}) could not be processed by the device")
+                raise KeyError(f"Command ({command}) could not be processed by the device")
         else:
             if "?" in answer:
-                warn(f"Command ({command}) could not be processed by the device")
+                raise KeyError(f"Command ({command}) could not be processed by the device")
 
         # in case of a control command wait to allow for internal 
         # synchronisation of all the devices variables
