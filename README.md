@@ -6,7 +6,7 @@ The latest version of this driver is v0.1.1.
 
 **What's new?**
 - We greatly improved the general code documentation.
-- We now provide some examples for you in the  form of a Jupyter Notebook. It should help with understanding and settig up our QCoDeS driver.
+- We now provide some examples for you in the  form of a Jupyter Notebook. It should help with understanding and setting up our QCoDeS driver.
 - Names of files and methods have been changed to better fall in line with the general QCoDeS guidelines, while the old method names still work.
 - The `write` method has been improved. It now does a simple handshaking with the DAC and raises an error if the DAC could not process a command. It also implements some necessary delays to avoid race conditions.
 
