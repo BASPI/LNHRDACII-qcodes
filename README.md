@@ -5,8 +5,9 @@ This repository contains the QCoDeS driver for the Basel Precision Instruments *
 The latest version of this driver is v0.1.1.
 
 **What's new?**
-- We greatly improved the code documentation.
-- Names of files and methods have been changed to better fall in line with the general QCoDeS guidelines, while the old method names still do work.
+- We greatly improved the general code documentation.
+- We now provide some examples for you in the  form of a Jupyter Notebook. It should help with understanding and settig up our QCoDeS driver.
+- Names of files and methods have been changed to better fall in line with the general QCoDeS guidelines, while the old method names still work.
 - The `write` method has been improved. It now does a simple handshaking with the DAC and raises an error if the DAC could not process a command. It also implements some necessary delays to avoid race conditions.
 
 This version of the driver aims to be a one by one replacement for the original version of the driver. Make sure to change the the filenames in the import section of your code. If you have any issues with that, please use the GitHub issue tracker to report it, or get in contact with us.
