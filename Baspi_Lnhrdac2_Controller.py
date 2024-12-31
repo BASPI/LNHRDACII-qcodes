@@ -402,10 +402,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: hexadecimal DAC value (0x0 - 0xFFFFFF)
         """
-        
-        warn("This method has been slightly changed in this version of the driver. "
-             + "If you want the original version of this method, uncomment the section in the method definition.")
-        
+                
         res = self.write(f"{channel} vr?")
         # uncomment for original version
         # res = self._dacval_to_vval(res)
