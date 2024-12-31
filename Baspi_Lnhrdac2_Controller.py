@@ -124,9 +124,9 @@ class BaspiLnhrdac2Controller():
     
     #-------------------------------------------------
 
-    def set_channel_on(self, channel: int) -> str:
+    def set_channel_status(self, channel: int, status: str) -> str:
         """
-        Turn on a specific DAC channel
+        Turn a specific DAC channel on or off
 
         Parameters:
         channel: DAC channel (1 - 24)
@@ -135,58 +135,19 @@ class BaspiLnhrdac2Controller():
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
 
-        return self.write(f"{channel} on")
-    
-    # alias for reverse compatibility
-    set_chan_on = set_channel_on
+        return self.write(f"{channel} {status}")
 
     #-------------------------------------------------
 
-    def set_channel_off(self, channel: int) -> str:
+    def set_all_status(self, status: str) -> str:
         """
-        Turn off a specific DAC channel
-
-        Parameters:
-        channel: DAC channel ("1" - "24")
-
-        Returns:
-        string: DAC-Error Code ("0" - "5"). "0" is always "no error"
-        """
-
-        return self.write(f"{channel} off")
-    
-    # alias for reverse compatibility
-    set_chan_off = set_channel_off
-
-    #-------------------------------------------------
-
-    def set_all_on(self) -> str:
-        """
-        Turn on all DAC channels
+        Turn all DAC channels on or off
 
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
         
-        return self.write("all on")
-    
-    # alias for reverse compatibility
-    all_on = set_all_on
-
-    #-------------------------------------------------
-    
-    def set_all_off(self) -> str:
-        """
-        Turn off all DAC channels
-
-        Returns:
-        string: DAC-Error Code ("0" - "5"). "0" is always "no error"
-        """
-        
-        return self.write("all off")
-    
-    # alias for reverse compatibility
-    all_off = set_all_off
+        return self.write(f"all {status}")
 
     #-------------------------------------------------
 
