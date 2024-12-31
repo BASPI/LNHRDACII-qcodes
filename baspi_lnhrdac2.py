@@ -18,6 +18,7 @@ from Baspi_Lnhrdac2_Parser import BaspiLnhrdac2Parser as parser
 from qcodes.station import Station
 from qcodes.instrument import VisaInstrument, InstrumentChannel, ChannelList
 from qcodes.parameters import create_on_off_val_mapping
+import qcodes.validators as validate
 
 from functools import partial
 from time import sleep
@@ -31,15 +32,6 @@ log = logging.getLogger(__name__)
 # class ----------------------------------------------------------------
 
 class BaspiLnhrdac2Channel(InstrumentChannel):
-    """
-    Class that defines a channel of the LNHR DAC II with all its parameters.
-
-    Parameters:
-    parent: instrument this channel is a part of
-    name: name of the channel
-    channel: channel numnber
-    controller: the controller the instrument uses for its communication
-    """
 
     def __init__(self, 
                  parent: VisaInstrument, 
@@ -47,7 +39,13 @@ class BaspiLnhrdac2Channel(InstrumentChannel):
                  channel: int, 
                  controller: BaspiLnhrdac2Controller):
         """
-        Constructor. Creates an instance of the LNHR DAC II Channel class.
+        Class that defines a channel of the LNHR DAC II with all its QCoDeS-parameters.
+
+        Parameters:
+        parent: instrument this channel is a part of
+        name: name of the channel
+        channel: channel numnber
+        controller: the controller the instrument uses for its communication
         """
 
         super().__init__(parent, name)
@@ -59,6 +57,7 @@ class BaspiLnhrdac2Channel(InstrumentChannel):
             get_parser = parser.dacval_to_vval,
             set_cmd = partial(controller.set_channel_dacvalue, channel),
             set_parser = parser.vval_to_dacval,
+            vals = validate.Numbers(min_value = -10.0, max_value = 10.0),
             initial_value = 0.0
         )
 
@@ -81,14 +80,16 @@ class BaspiLnhrdac2Channel(InstrumentChannel):
 # class ----------------------------------------------------------------
 
 class BaspiLnhrdac2(VisaInstrument):
-    """
-    Main class for integrating the Basel Precision Instruments 
-    LNHR DAC II into QCoDeS as an instrument.
-    """
-
-    #-------------------------------------------------
-
+    
     def __init__(self, name, address):
+        """
+        Main class for integrating the Basel Precision Instruments 
+        LNHR DAC II into QCoDeS as an instrument.
+
+        Parameters:
+        name: name of the instrument
+        address: VISA address of the instrument
+        """
 
         super().__init__(name, address)
 
@@ -203,7 +204,7 @@ if __name__ == "__main__":
     res = dac.ch1.voltage.get()
     print(res)
     sleep(1)
-    dac.ch1.voltage.set(0)
+    dac.ch1.voltage.set(-3.0)
     res = dac.ch1.voltage.get()
     print(res)
     sleep(1)
@@ -213,3 +214,4 @@ if __name__ == "__main__":
     res = dac.all.voltage.get()
     print(res)
     dac.ch17.high_bandwidth.set(True)
+    dac.ch17.high_bandwidth.set(1.58)

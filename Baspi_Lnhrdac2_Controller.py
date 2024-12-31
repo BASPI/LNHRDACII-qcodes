@@ -19,22 +19,18 @@ from qcodes.instrument import VisaInstrument
 # class ----------------------------------------------------------------
 
 class BaspiLnhrdac2Controller():
-    """
-    Controller class for the LNHR DAC II QCoDeS driver. This class contains 
-    all commands that can be used to control the device. It also implements 
-    the write method which is used to send the commands to the device.
-
-    Parameters:
-    instrument: object reference to the instrument created by the
-        BaspiLnhrdac2 class.
-    """
-
-    #-------------------------------------------------
     
     def __init__(self, instrument: VisaInstrument) -> None:
         """
-        Constructor. Creates an instance of the LNHR DAC II controller.
+        Controller class for the LNHR DAC II QCoDeS driver. This class contains 
+        all commands that can be used to control the device. It also implements 
+        the write method which is used to send the commands to the device.
+
+        Parameters:
+        instrument: object reference to the instrument created by the
+            BaspiLnhrdac2 class.
         """
+        
         self.__instrument = instrument
 
         # communication properties
