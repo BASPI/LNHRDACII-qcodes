@@ -1,5 +1,5 @@
-# LNHR DAC II QCoDeS Driver
-This repository contains the QCoDeS driver for the Basel Precision Instruments *Low Noise High Resolution Digital to Analog Converter II* or *LNHR DAC II*. Additionally there are some examples on how to use the driver.
+# Alpha Version 0.2.0 LNHR DAC II QCoDeS Driver
+This repository branch contains an untested version of a driver. Any use of it is strongly discouraged. Everything in this branch could break your system and/or your hardware. BASPI is not liable for any damage caused.
 
 ## Latest Release
 The latest version of this driver is v0.1.1.
