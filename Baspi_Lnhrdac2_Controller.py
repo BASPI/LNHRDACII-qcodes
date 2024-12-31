@@ -23,6 +23,10 @@ class BaspiLnhrdac2Controller():
     Controller class for the LNHR DAC II QCoDeS driver. This class contains 
     all commands that can be used to control the device. It also implements 
     the write method which is used to send the commands to the device.
+
+    Parameters:
+    instrument: object reference to the instrument created by the
+        BaspiLnhrdac2 class.
     """
 
     #-------------------------------------------------
@@ -30,10 +34,6 @@ class BaspiLnhrdac2Controller():
     def __init__(self, instrument: VisaInstrument) -> None:
         """
         Constructor. Creates an instance of the LNHR DAC II controller.
-
-        Parameters:
-        instrument: object reference to the instrument created by the
-            BaspiLnhrdac2 class.
         """
         self.__instrument = instrument
 
@@ -360,7 +360,7 @@ class BaspiLnhrdac2Controller():
 
     #-------------------------------------------------
 
-    def get_channel_dacval(self, channel: int) -> str:
+    def get_channel_dacvalue(self, channel: int) -> str:
         """
         Read the present value of a specified DAC channel
 
@@ -375,7 +375,7 @@ class BaspiLnhrdac2Controller():
 
     #-------------------------------------------------
 
-    def get_all_dacval(self) -> str:
+    def get_all_dacvalue(self) -> str:
         """
         Read the present value of all DAC channels
 
@@ -387,7 +387,7 @@ class BaspiLnhrdac2Controller():
         return self.write("all v?")
     
     # alias for reverse compatibility
-    query_all_voltage = get_all_dacval
+    query_all_voltage = get_all_dacvalue
 
     #-------------------------------------------------
 
@@ -402,7 +402,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: hexadecimal DAC value (0x0 - 0xFFFFFF)
         """
-                
+
         res = self.write(f"{channel} vr?")
         # uncomment for original version
         # res = self._dacval_to_vval(res)
