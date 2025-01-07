@@ -96,9 +96,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"{channel:0} {dacvalue:x}")
-
-    # alias for reverse compatibility
-    set_chan_voltage = set_channel_dacvalue
     
     #-------------------------------------------------
 
@@ -114,9 +111,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"all {dacvalue:x}")
-    
-    # alias for reverse compatibility
-    set_all_voltage = set_all_dacvalue
     
     #-------------------------------------------------
 
@@ -161,9 +155,6 @@ class BaspiLnhrdac2Controller():
         """
         
         return self.write(f"{channel} {bandwidth}")
-    
-    # alias for reverse compatibility
-    set_chan_bandwidth = set_bandwidth = set_channel_bandwidth
 
     #-------------------------------------------------
 
@@ -205,9 +196,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"awg-{memory} {address:x} {dacvalue:x}")
-    
-    # alias for reverse compatibility
-    set_adr_AWGmem = set_awg_memory_value
 
     #-------------------------------------------------
 
@@ -224,9 +212,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"awg-{memory} ALL {dacvalue:x}")
-    
-    # alias for reverse compatibility
-    set_all_AWGMem = set_awg_memory_all
 
     #-------------------------------------------------
     
@@ -253,9 +238,6 @@ class BaspiLnhrdac2Controller():
 
         return self.write(f"wav-{memory} {address:x} {dacvalue:x}")
 
-    # alias for reverse compatibility
-    set_adr_WAVMem = set_wav_memory_value
-
     #-------------------------------------------------
 
     def set_wav_memory_all(self, memory: str, dacvalue: int) -> str:
@@ -271,9 +253,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"wav-{memory} all {dacvalue:x}")
-    
-    # alias for reverse compatibility
-    set_all_WAVMem = set_wav_memory_all
     
     #-------------------------------------------------
     
@@ -342,9 +321,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write("all v?")
-    
-    # alias for reverse compatibility
-    query_all_voltage = get_all_dacvalue
 
     #-------------------------------------------------
 
@@ -360,13 +336,7 @@ class BaspiLnhrdac2Controller():
         string: hexadecimal DAC value (0x0 - 0xFFFFFF)
         """
 
-        res = self.write(f"{channel} vr?")
-        # uncomment for original version
-        # res = self._dacval_to_vval(res)
-        return res
-    
-    # alias for reverse compatibility
-    query_chan_voltageReg = get_channel_dacvalue_registered
+        return self.write(f"{channel} vr?")
 
     #-------------------------------------------------
 
@@ -381,9 +351,6 @@ class BaspiLnhrdac2Controller():
         """
         
         return self.write("all vr?")
-
-    # alias for reverse compatibility
-    query_all_voltageReg = get_all_dacvalue_registered
     
     #-------------------------------------------------
 
@@ -399,9 +366,6 @@ class BaspiLnhrdac2Controller():
         """
         
         return self.write(f"{channel} s?")
-    
-    # alias for reverse compatibility
-    query_chan_status = get_channel_status
 
     #-------------------------------------------------
 
@@ -414,9 +378,6 @@ class BaspiLnhrdac2Controller():
         """
         
         return self.write("all s?").replace("\r\n","").split(';')
-
-    # alias for reverse compatibility
-    query_all_status = get_all_status
     
     #-------------------------------------------------
 
@@ -432,13 +393,10 @@ class BaspiLnhrdac2Controller():
         """
         
         return self.write(f"{channel} bw?")
-    
-    # alias for reverse compatibility
-    query_chan_bandwidth = get_bandwidth = get_channel_bandwidth
 
     #-------------------------------------------------
 
-    def get_all_bandwidth(self) -> str:
+    def get_all_bandwidth(self) -> list:
         """
         Read the bandwith of all DAC channels (100 Hz or 100 kHz)
 
@@ -447,9 +405,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write("all bw?").replace("\r\n","").split(';')
-    
-    # alias for reverse compatibility
-    query_all_bandwidth = get_all_bandwidth
 
     #-------------------------------------------------
 
@@ -465,9 +420,6 @@ class BaspiLnhrdac2Controller():
         """
         
         return self.write(f"{channel} m?")
-    
-    # alias for reverse compatibility
-    query_chan_DACMode = read_mode = get_channel_mode
 
     #-------------------------------------------------
 
@@ -480,9 +432,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write("all m?").replace("\r\n","").split(';')
-    
-    # alias for reverse compatibility
-    query_all_DACMode = get_all_mode
 
     #-------------------------------------------------
 
@@ -499,13 +448,10 @@ class BaspiLnhrdac2Controller():
         """
         
         return self.write(f"awg-{memory} {address:x}?")
-    
-    # alias for reverse compatibility
-    query_adr_AWGmem = get_awg_memory_value
 
     #-------------------------------------------------
 
-    def get_awg_memory_block(self, memory: str, block_start_address: int) -> str:
+    def get_awg_memory_block(self, memory: str, block_start_address: int) -> list:
         """
         Read the values of a AWG memory block (1000 values). The AWG must not run
 
@@ -514,14 +460,10 @@ class BaspiLnhrdac2Controller():
         address: hexadecimal memory address (0x0 - 0x84CF)
 
         Returns:
-        string: hexadecimal values (0x0 - 0xFFFFFF) of the memory block, 
-            semicolon separated
+        list: hexadecimal values (0x0 - 0xFFFFFF) of the memory block
         """
         
         return self.write(f"awg-{memory} {block_start_address:x} blk?").replace("\r\n","").split(';')
-    
-    # alias for reverse compatibility
-    query_block_AWGmem = get_awg_memory_block
 
     #-------------------------------------------------
 
@@ -538,13 +480,10 @@ class BaspiLnhrdac2Controller():
         """
         
         return self.write(f"wav-{memory} {address:x}?")
-    
-    # alias for reverse compatibility
-    query_adr_WAVmem = get_wav_memory_value
 
     #-------------------------------------------------
 
-    def get_wav_memory_block(self, memory: str, block_start_address: int) -> str:
+    def get_wav_memory_block(self, memory: str, block_start_address: int) -> list:
         """
         Read the values of a wave memory block (1000 values)
 
@@ -553,18 +492,14 @@ class BaspiLnhrdac2Controller():
         address: hexadecimal memory address (0x0 - 0x84CF)
 
         Returns:
-        string: hexadecimal values (0x0 - 0xFFFFFF) of the memory block, 
-            semicolon separated
+        list: hexadecimal values (0x0 - 0xFFFFFF) of the memory block
         """
         
         return self.write(f"wav-{memory} {block_start_address:x} blk?").replace("\r\n","").split(';')
-    
-    # alias for reverse compatibility
-    query_block_WAVmem = get_wav_memory_block
 
     #-------------------------------------------------
 
-    def get_polynomial(self, memory: str) -> str:
+    def get_polynomial(self, memory: str) -> list:
         """
         Read polynomial coefficients. The polynomial can be applied to 
         the values of the AWG memory when the wave memory is copied 
@@ -574,14 +509,11 @@ class BaspiLnhrdac2Controller():
         memory: associated AWG memory ("A", "B", "C" or "D")
 
         Returns:
-        string: listing of floating-point coefficients in ascending 
-            order of their order of power, semicolon separated
+        list: listing of floating-point coefficients in ascending 
+            order of their order of power
         """
         
         return self.write(f"poly-{memory}?").replace("\r\n","").split(';')
-    
-    # alias for reverse compatibility
-    query_coefs_Polymem = get_polynomial
     
     #-------------------------------------------------
 
@@ -601,11 +533,12 @@ class BaspiLnhrdac2Controller():
         string: overview of the ASCII commands and queries of the device
         """
         # TODO: check multiline output
-        
-        return self.write("?")
+
+        ans = self.write("?")
+        self.__instrument.visa_handle.clear()
+
+        return ans
     
-    # alias for reverse compatibility
-    get_overview = get_help_commands
     #-------------------------------------------------
 
     def get_help_control(self) -> str:
@@ -617,10 +550,10 @@ class BaspiLnhrdac2Controller():
         """
         # TODO: check multiline output
 
-        return self.write("help?")
-    
-    # alias for reverse compatibility
-    get_help = get_help_control
+        ans = self.write("help?")
+        self.__instrument.visa_handle.clear()
+
+        return ans
     
     #-------------------------------------------------
     
@@ -631,12 +564,12 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: firmware of the device
         """
-        # TODO: check multiline output, fix get_idn()
-
-        answer = self.write("soft?")
-        self.empty_buffer()
+        # TODO: check multiline output
        
-        return answer[17:33]
+        ans = self.write("soft?")
+        self.__instrument.visa_handle.clear()
+
+        return ans 
 
     #-------------------------------------------------
 
@@ -647,12 +580,12 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: serial number of the device
         """
-        # TODO: check multiline output, fix get_idn()
+        # TODO: check multiline output
 
-        answer = self.write("hard?")
-        self.empty_buffer()
+        ans = self.write("hard?")
+        self.__instrument.visa_handle.clear()
 
-        return answer[36:51]
+        return ans
     
     #-------------------------------------------------
     
@@ -666,7 +599,10 @@ class BaspiLnhrdac2Controller():
         """
         # TODO: check multiline output, 
 
-        return self.write("health?")
+        ans = self.write("health?")
+        self.__instrument.visa_handle.clear()
+
+        return ans
 
     #-------------------------------------------------
 
@@ -678,8 +614,11 @@ class BaspiLnhrdac2Controller():
         string: IP-adress and subnet mask of the device
         """
         # TODO: check multiline output, 
-        
-        return self.write("ip?")
+
+        ans = self.write("ip?")
+        self.__instrument.visa_handle.clear()
+
+        return ans
     
     #-------------------------------------------------
 
@@ -692,7 +631,10 @@ class BaspiLnhrdac2Controller():
         """
         # TODO: check multiline output, 
 
-        return self.write("serial?")
+        ans = self.write("serial?")
+        
+
+        return ans
 
     #-------------------------------------------------
 
@@ -705,8 +647,11 @@ class BaspiLnhrdac2Controller():
         """
         # TODO: check multiline output, 
 
-        return self.write("contact?")
+        ans = self.write("contact?")
+        self.__instrument.visa_handle.clear()
 
+        return ans
+    
     #-------------------------------------------------
 
     ##################################################
@@ -730,9 +675,6 @@ class BaspiLnhrdac2Controller():
         string: DAC board updates instantly ("0") or synchronous ("1")
         """
         return self.write(f"C UM-{board}?")
-    
-    # alias for reverse compatibility
-    read_updateMode = get_board_update_mode
 
     #-------------------------------------------------
 
@@ -751,9 +693,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"C UM-{board} {mode}")
-    
-    # alias for reverse compatibility
-    write_updateMode = set_board_update_mode
 
     #-------------------------------------------------
 
@@ -770,9 +709,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"C SYNC-{board}")
-    
-    # alias for reverse compatibility
-    update_board_sync = update_board_channels
 
     #-------------------------------------------------
     
@@ -797,9 +733,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"C RMP-{ramp} {mode}")
-    
-    # alias for reverse compatibility
-    write_rampMode = set_ramp_mode
 
     #-------------------------------------------------
 
@@ -816,9 +749,6 @@ class BaspiLnhrdac2Controller():
         """
         
         return self.write(f"C RMP-{ramp} S?")
-    
-    # alias for reverse compatibility
-    read_rampState = get_ramp_state
 
     #-------------------------------------------------
 
@@ -836,9 +766,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"C RMP-{ramp} CD?")
-    
-    # alias for reverse compatibility
-    read_rampCyclesDone = get_ramp_cycles_done
 
     #-------------------------------------------------
 
@@ -856,9 +783,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"C RMP-{ramp} SD?")
-    
-    # alias for reverse compatibility
-    read_rampStepsDone = get_ramp_steps_done
 
     #-------------------------------------------------
 
@@ -874,9 +798,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"C RMP-{ramp} SSV?")
-    
-    # alias for reverse compatibility
-    read_rampStepSizeVoltage = get_ramp_step_size
 
     #-------------------------------------------------
 
@@ -892,9 +813,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"C RMP-{ramp} ST?")
-    
-    # alias for reverse compatibility
-    read_rampStepsPerCycle = get_ramp_cycle_steps
 
     #-------------------------------------------------
 
@@ -912,9 +830,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"C RMP-{ramp} AVA?")
-    
-    # alias for reverse compatibility
-    read_rampChannelAvailable = get_ramp_channel_availability
 
     #-------------------------------------------------
 
@@ -929,9 +844,6 @@ class BaspiLnhrdac2Controller():
         string: associated DAC channel ("1" - "24")
         """
         return self.write(f"C RMP-{ramp} CH?")
-    
-    # alias for reverse compatibility
-    read_rampSelectedChannel = get_ramp_channel
 
     #-------------------------------------------------
 
@@ -950,9 +862,6 @@ class BaspiLnhrdac2Controller():
         
         return self.write(f"C RMP-{ramp} CH {channel}")
     
-    # alias for reverse compatibility
-    write_rampSelectedChannel = set_ramp_channel
-    
     #-------------------------------------------------
 
     def get_ramp_starting_voltage(self, ramp: str) -> str:
@@ -967,9 +876,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"C RMP-{ramp} STAV?")
-    
-    # alias for reverse compatibility
-    read_rampStartVoltage = get_ramp_starting_voltage
 
     #-------------------------------------------------
 
@@ -986,9 +892,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"C RMP-{ramp} STAV {voltage:.6f}")
-    
-    # alias for reverse compatibility
-    write_rampStartVoltage = set_ramp_starting_voltage
 
     #-------------------------------------------------
 
@@ -1005,9 +908,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"C RMP-{ramp} STOV?")
-    
-    # alias for reverse compatibility
-    read_rampStopPeakVoltage = get_ramp_peak_voltage
 
     #-------------------------------------------------
 
@@ -1026,9 +926,6 @@ class BaspiLnhrdac2Controller():
 
         return self.write(f"C RMP-{ramp} STOV {voltage:.6f}")
     
-    # alias for reverse compatibility
-    write_rampStopPeakVoltage = set_ramp_peak_voltage
-    
     #-------------------------------------------------
 
     def get_ramp_duration(self, ramp: str) -> str:
@@ -1044,9 +941,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"C RMP-{ramp} RT?")
-    
-    # alias for reverse compatibility
-    read_rampTime = get_ramp_duration
 
     #-------------------------------------------------
 
@@ -1065,9 +959,6 @@ class BaspiLnhrdac2Controller():
 
         return self.write(f"C RMP-{ramp} RT {time:.3f}")
     
-    # alias for reverse compatibility
-    write_rampTime = set_ramp_duration
-    
     #-------------------------------------------------
 
     def get_ramp_shape(self, ramp: str) -> str:
@@ -1083,9 +974,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"C RMP-{ramp} RS?")
-    
-    # alias for reverse compatibility
-    read_rampShape = get_ramp_shape
 
     #-------------------------------------------------
 
@@ -1103,9 +991,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"C RMP-{ramp} RS {shape}")
-    
-    # alias for reverse compatibility    
-    write_rampShape = set_ramp_shape
 
     #-------------------------------------------------
 
@@ -1123,9 +1008,6 @@ class BaspiLnhrdac2Controller():
 
         return self.write(f"C RMP-{ramp} CS?")
     
-    # alias for reverse compatibility
-    read_rampCyclesSet = get_ramp_cycles
-    
     #-------------------------------------------------
 
     def set_ramp_cycles(self, ramp: str, cycles: int) -> str:
@@ -1142,9 +1024,7 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"C RMP-{ramp} CS {cycles}")
-    
-    # alias for reverse compatibility
-    write_rampCyclesSet = set_ramp_cycles
+
     
     #-------------------------------------------------
 
@@ -1162,9 +1042,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"C RMP-{ramp} STEP?")
-    
-    # alias for reverse compatibility
-    read_rampStepSelection = get_ramp_mode
 
     #-------------------------------------------------
 
@@ -1183,9 +1060,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"C RMP-{ramp} STEP {mode}")
-    
-    # alias for reverse compatibility
-    write_rampStepSelection = select_ramp_step
 
     #-------------------------------------------------
 
@@ -1213,9 +1087,6 @@ class BaspiLnhrdac2Controller():
 
         return self.write(f"C AWG-{awg} AS?")
 
-    # alias for reverse compatibility
-    read_AWGStartMode = get_awg_start_mode
-
     #-------------------------------------------------
 
     def set_awg_start_mode(self, awg: str, mode: int) -> str:
@@ -1234,9 +1105,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"C AWG-{awg} AS {mode}")
-    
-    # alias for reverse compatibility
-    write_AWGStartMode = set_awg_start_mode
 
     #-------------------------------------------------
 
@@ -1256,9 +1124,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"C AWG-{awg} RLD?")
-    
-    # alias for reverse compatibility
-    read_AWGReloadMode = get_awg_reload_mode
 
     #-------------------------------------------------
 
@@ -1280,9 +1145,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"C AWG-{awg} RLD {mode}")
-    
-    # alias for reverse compatibility
-    write_AWGReloadMode = set_awg_reload_mode
 
     #-------------------------------------------------
 
@@ -1300,9 +1162,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"C AWG-{polynomial} AP?")
-    
-    # alias for reverse compatibility
-    read_AWGApplyPolyMode = get_apply_polynomial
 
     #-------------------------------------------------
     
@@ -1322,9 +1181,6 @@ class BaspiLnhrdac2Controller():
 
         return self.write(f"C AWG-{polynomial} AP {mode}")
     
-    # alias for reverse compatibility
-    write_AWGApplyPolyMode = set_apply_polynomial
-    
     #-------------------------------------------------
     
     def get_adaptive_shift_voltage(self, awg: str) -> str:
@@ -1342,9 +1198,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"C AWG-{awg} SHIV?")
-    
-    # alias for reverse compatibility
-    read_AWGShiftVoltage = get_adaptive_shift_voltage
 
     #-------------------------------------------------
 
@@ -1363,9 +1216,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"C AWG-{awg} SHIV {voltage:.6f}")
-    
-    # alias for reverse compatibility
-    write_AWGShiftVoltage = set_adaptive_shift_voltage
 
     #-------------------------------------------------
 
@@ -1391,9 +1241,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"C AWG-{board} ONLY?")
-    
-    # alias for reverse compatibility
-    read_AWGNormalMode = get_awg_board_mode
 
     #-------------------------------------------------
 
@@ -1412,9 +1259,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"C AWG-{board} ONLY {mode}")
-    
-    # alias for reverse compatibility
-    write_AWGNormalMode = set_awg_board_mode
 
     #-------------------------------------------------
 
@@ -1432,9 +1276,6 @@ class BaspiLnhrdac2Controller():
 
         return self.write(f"C AWG-{awg} {command}")
     
-    # alias for reverse compatibility
-    write_AWGControlMode = set_awg_start_stop
-    
     #-------------------------------------------------
 
     def get_awg_state(self, awg: str) -> str:
@@ -1449,9 +1290,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"C AWG-{awg} S?")
-    
-    # alias for reverse compatibility
-    read_AWGState = get_awg_state
 
     #-------------------------------------------------
 
@@ -1469,9 +1307,6 @@ class BaspiLnhrdac2Controller():
 
         return self.write(f"C AWG-{awg} CD?")
     
-    # alias for reverse compatibility
-    read_AWGCyclesDone = get_awg_cycles_done
-    
     #-------------------------------------------------
 
     def get_awg_duration(self, awg: str) -> str:
@@ -1486,9 +1321,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"C AWG-{awg} DP?")
-    
-    # alias for reverse compatibility
-    read_AWGDuration = get_awg_duration
     
     #-------------------------------------------------
 
@@ -1506,9 +1338,6 @@ class BaspiLnhrdac2Controller():
 
         return self.write(f"C AWG-{awg} AVA?")
     
-    # alias for reverse compatibility
-    read_AWGChannelAvailable = get_awg_channel_availability
-    
     #-------------------------------------------------
 
     def get_awg_channel(self, awg: str) -> str:
@@ -1523,9 +1352,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"C AWG-{awg} CH?")
-    
-    # alias for reverse compatibility
-    read_AWGSelectedChannel = get_awg_channel
     
     #-------------------------------------------------
 
@@ -1543,9 +1369,6 @@ class BaspiLnhrdac2Controller():
 
         return self.write(f"C AWG-{awg} CH {channel}")
     
-    # alias for reverse compatibility
-    write_AWGSelectedChannel = set_awg_channel
-    
     #-------------------------------------------------
 
     def get_awg_memory_size(self, awg: str) -> str:
@@ -1560,9 +1383,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"C AWG-{awg} MS?")
-    
-    # alias for reverse compatibility
-    read_AWGMemorySize = get_awg_memory_size
 
     #-------------------------------------------------
 
@@ -1580,9 +1400,6 @@ class BaspiLnhrdac2Controller():
 
         return self.write(f"C AWG-{awg} MS {size}")
     
-    # alias for reverse compatibility
-    write_AWGMemorySize = set_awg_memory_size
-    
     #-------------------------------------------------
 
     def get_awg_cycles(self, awg: str) -> str:
@@ -1598,9 +1415,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"C AWG-{awg} CS?")
-    
-    # alias for reverse compatibility
-    read_AWGCyclesSet = get_awg_cycles
 
     #-------------------------------------------------
 
@@ -1618,10 +1432,7 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"C AWG-{awg} CS {cycles}")
-    
-    # alias for reverse compatibility
-    write_AWGCyclesSet = set_awg_cycles
-    
+
     #-------------------------------------------------
 
     def get_awg_trigger_mode(self, awg: str) -> str:
@@ -1640,9 +1451,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"C AWG-{awg} TM?")
-    
-    # alias for reverse compatibility
-    read_AWGExtTriggerMode = get_awg_trigger_mode
 
     #-------------------------------------------------
 
@@ -1663,9 +1471,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"C AWG-{awg} TM {mode}")
-    
-    # alias for reverse compatibility
-    write_AWGExtTriggerMode = set_awg_trigger_mode
 
     #-------------------------------------------------
 
@@ -1682,9 +1487,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"C AWG-{board} CP?")
-    
-    # alias for reverse compatibility
-    read_AWGClkPeriod = get_awg_clock_period
 
     #-------------------------------------------------
 
@@ -1704,9 +1506,6 @@ class BaspiLnhrdac2Controller():
 
         return self.write(f"C AWG-{board} CP {period}")
     
-    # alias for reverse compatibility
-    write_AWGClkPeriod = set_awg_clock_period
-    
     #-------------------------------------------------
 
     def get_awg_refclock_state(self) -> str:
@@ -1718,9 +1517,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write("C AWG-1MHz?")
-    
-    # alias for reverse compatibility
-    read_AWGClkRefState = get_awg_refclock_state
 
     #-------------------------------------------------
 
@@ -1736,9 +1532,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"C AWG-1MHz {state}")
-    
-    # alias for reverse compatibility
-    write_AWGClkRefState = set_awg_refclock_state
 
     #-------------------------------------------------
 
@@ -1760,9 +1553,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write("C SWG MODE?")
-    
-    # alias for reverse compatibility
-    read_SWGMode = get_swg_mode
 
     #-------------------------------------------------
 
@@ -1780,9 +1570,6 @@ class BaspiLnhrdac2Controller():
 
         return self.write(f"C SWG MODE {mode}")
     
-    # alias for reverse compatibility
-    write_SWGMode = set_swg_mode
-    
     #-------------------------------------------------
 
     def get_swg_shape(self) -> str:
@@ -1797,9 +1584,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write("C SWG WF?")
-    
-    # alias for reverse compatibility
-    read_SWGFunction = get_swg_shape
 
     #-------------------------------------------------
 
@@ -1817,9 +1601,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"C SWG WF {shape}")
-    
-    # alias for reverse compatibility
-    write_SWGFunction = set_swg_shape
    
     #-------------------------------------------------
 
@@ -1833,9 +1614,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write("C SWG DF?")
-    
-    # alias for reverse compatibility
-    read_SWGDesFrequency = get_swg_desired_frequency
 
     #-------------------------------------------------
 
@@ -1853,9 +1631,6 @@ class BaspiLnhrdac2Controller():
          
         return self.write(f"C SWG DF {frequency}")
     
-    # alias for reverse compatibility
-    write_SWGDesFrequency = set_swg_desired_frequency
-    
     #-------------------------------------------------
 
     def get_swg_adaptclock_state(self) -> str:
@@ -1870,9 +1645,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write("C SWG ACLK?")
-    
-    # alias for reverse compatibility
-    read_SWGApdativeClk = get_swg_adaptclock_state
 
     #-------------------------------------------------
 
@@ -1892,9 +1664,6 @@ class BaspiLnhrdac2Controller():
 
         return self.write(f"C SWG ACLK {state}")
     
-    # alias for reverse compatibility
-    write_SWGAdaptiveClk = set_swg_adaptclock_state
-    
     #-------------------------------------------------
 
     def get_swg_amplitude(self) -> str:
@@ -1907,9 +1676,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write("C SWG AMP?")
-    
-    # alias for reverse compatibility
-    read_SWGAmplitude = get_swg_amplitude
 
     #-------------------------------------------------
 
@@ -1927,9 +1693,6 @@ class BaspiLnhrdac2Controller():
 
         return self.write(f"C SWG AMP {amplitude:.6f}")
     
-    # alias for reverse compatibility
-    write_SWGAmplitude = set_swg_amplitude
-    
     #-------------------------------------------------
 
     def get_swg_offset(self) -> str:
@@ -1941,9 +1704,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write("C SWG DCV?")
-    
-    # alias for reverse compatibility
-    read_SWGDCOffset = get_swg_offset
 
     #-------------------------------------------------
 
@@ -1960,9 +1720,6 @@ class BaspiLnhrdac2Controller():
 
         return self.write(f"C SWG DCV {offset:.6f}")
     
-    # alias for reverse compatibility
-    write_SWGDCOffset = set_swg_offset
-    
     #-------------------------------------------------
 
     def get_swg_phase(self) -> str:
@@ -1975,9 +1732,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write("C SWG PHA?")
-    
-    # alias for reverse compatibility
-    read_SWGPhase = get_swg_phase
 
     #-------------------------------------------------
 
@@ -1995,9 +1749,6 @@ class BaspiLnhrdac2Controller():
 
         return self.write(f"C SWG PHA {phase:.4f}")
     
-    # alias for reverse compatibility
-    write_SWGPhase = set_swg_phase
-    
     #-------------------------------------------------
 
     def get_swg_dutycycle(self) -> str:
@@ -2010,9 +1761,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write("C SWG DUC?")
-    
-    # alias for reverse compatibility
-    read_SWGDutyCycle = get_swg_dutycycle
 
     #-------------------------------------------------
 
@@ -2029,9 +1777,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"C SWG DUC {dutycycle:.3f}")
-    
-    # alias for reverse compatibility
-    write_SWGDutyCycle = set_swg_dutycycle
 
     #-------------------------------------------------
 
@@ -2044,9 +1789,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write("C SWG MS?")
-    
-    # alias for reverse compatibility
-    read_SWGMemSize = get_swg_memory_size
 
     #-------------------------------------------------
 
@@ -2060,9 +1802,6 @@ class BaspiLnhrdac2Controller():
         string: SWG frequency (0.001 Hz - 10 kHz)
         """
         return self.write("C SWG NF?")
-    
-    # alias for reverse compatibility
-    read_SWGNearestFreq = get_swg_nearest_frequency
 
     #-------------------------------------------------
 
@@ -2076,9 +1815,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write("C SWG CLP?")
-    
-    # alias for reverse compatibility
-    read_SWGClippingStatus = get_swg_clipping_status
     
     #-------------------------------------------------
 
@@ -2095,9 +1831,6 @@ class BaspiLnhrdac2Controller():
 
         return self.write("C SWG CP?")
     
-    # alias for reverse compatibility
-    read_SWGClkPeriod = get_swg_clock_period
-    
     #-------------------------------------------------
 
     def get_swg_wav_memory(self) -> str:
@@ -2112,9 +1845,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write("C SWG WMEM?")
-    
-    # alias for reverse compatibility
-    read_SWGMemSelected = get_swg_wav_memory
 
     #-------------------------------------------------
 
@@ -2132,10 +1862,7 @@ class BaspiLnhrdac2Controller():
         """
         
         return self.write(f"C SWG WMEM {wav}")
-    
-    # alias for reverse compatibility
-    write_SWGMemSelected = set_swg_wav_memory
-    
+
     #-------------------------------------------------
 
     def get_swg_selected_operation(self) -> str:
@@ -2154,9 +1881,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write("C SWG WFUN?")
-    
-    # alias for reverse compatibility
-    read_SWGSelectedFunc = get_swg_selected_operation
 
     #-------------------------------------------------
 
@@ -2178,9 +1902,6 @@ class BaspiLnhrdac2Controller():
         """
         return self.write(f"C SWG WFUN {operation}")
     
-    # alias for reverse compatibility
-    write_SWGSelectedFunc = set_swg_selected_operation
-    
     #-------------------------------------------------
 
     def get_swg_linearization_state(self) -> str:
@@ -2194,9 +1915,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write("C SWG LIN?")
-    
-    # alias for reverse compatibility
-    read_SWGLinearization = get_swg_linearization_state
 
     #-------------------------------------------------
 
@@ -2215,9 +1933,6 @@ class BaspiLnhrdac2Controller():
 
         return self.write(f"C SWG LIN {state}")
     
-    # alias for reverse compatibility
-    write_SWGLinearization = set_swg_linearization_state
-    
     #-------------------------------------------------
 
     def apply_swg_operation(self) -> str:
@@ -2229,9 +1944,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write("C SWG APPLY")
-    
-    # alias for reverse compatibility
-    apply_SWGFunction = apply_swg_operation
     
     #-------------------------------------------------
 
@@ -2252,10 +1964,7 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"C WAV-{wav} MS?")
-    
-    # alias for reverse compatibility
-    read_WAVMemSize = get_wav_memory_size
-    
+
     #-------------------------------------------------
 
     def clear_wav_memory(self, wav: str) -> str:
@@ -2271,10 +1980,7 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"C WAV-{wav} CLR")
-    
-    # alias for reverse compatibility
-    clear_WAVMem = clear_wav_memory
-    
+
     #-------------------------------------------------
 
     def save_wav_memory(self, wav: str) -> str:
@@ -2290,10 +1996,7 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"C WAV-{wav} SAVE")
-    
-    # alias for reverse compatibility
-    save_WAVMem = save_wav_memory
-    
+
     #-------------------------------------------------
 
     def get_wav_linearization_channel(self, wav: str) -> str:
@@ -2312,9 +2015,6 @@ class BaspiLnhrdac2Controller():
 
         return self.write(f"C WAV-{wav} LINCH?")
     
-    # alias for reverse compatibility
-    read_WAVMemLinChannel = get_wav_linearization_channel
-    
     #-------------------------------------------------
     
     def write_wav_to_awg(self, wav_awg: str) -> str:
@@ -2331,9 +2031,6 @@ class BaspiLnhrdac2Controller():
 
         return self.write(f"C WAV-{wav_awg} WRITE")
     
-    # alias for reverse compatibility
-    write_WAVMemToAWGMem = write_wav_to_awg
-
     #-------------------------------------------------
 
     def get_wav_memory_busy(self, wav: str) -> str:
@@ -2349,9 +2046,6 @@ class BaspiLnhrdac2Controller():
         """
 
         return self.write(f"C WAV-{wav} BUSY?")
-    
-    # alias for reverse compatibility
-    read_WAVBusyWriting = get_wav_memory_busy
 
 
 # main -----------------------------------------------------------------

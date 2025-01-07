@@ -93,112 +93,86 @@ class BaspiLnhrdac2(VisaInstrument):
 
         super().__init__(name, address)
 
-        controller = BaspiLnhrdac2Controller(self)
+        # "library" of all DAC commands
+        # not to be used outside of this class definition
+        # to only have a single interface to the device
+        self.__controller = BaspiLnhrdac2Controller(self)
 
         # visa properties for telnet communication
         self.visa_handle.write_termination = "\r\n"
         self.visa_handle.read_termination = "\r\n"
 
+        # get number of physicallly available channels
+        # for correct further initialization
+        channel_modes = self.__controller.get_all_mode()
+        self.__number_channels = len(channel_modes)
+        if self.__number_channels != 12 and self.__number_channels != 24:
+            raise SystemError("Physically available number of channels is not 12 or 24.")
+
         # create channels and add to instrument
         # save references for later grouping
         channels = {}
-        for channel_number in range(1, 25):
+        for channel_number in range(1, self.__number_channels + 1):
             name = f"ch{channel_number}"
-            channel = BaspiLnhrdac2Channel(self, name, channel_number, controller)
+            channel = BaspiLnhrdac2Channel(self, name, channel_number, self.__controller)
             channels.update({name: channel})
             self.add_submodule(name, channel)
 
         # grouping channels to simplify simoultaneous access
         all_channels = ChannelList(self, "all channels", BaspiLnhrdac2Channel)
-        for channel_number in range(1, 25):
+        for channel_number in range(1, self.__number_channels + 1):
             channel = channels[f"ch{channel_number}"]
             all_channels.append(channel)
 
-        # channel list for setting/getting all channels at once
         self.add_submodule("all", all_channels)
-    
-    # def __init__(self, 
-    #              name: str, 
-    #              address: str, 
-    #              min_val: float = -10, 
-    #              max_val: float = 10, 
-    #              baud_rate: int = 115200,
-    #              channel_number: int = 24,
-    #              **kwargs: Any
-    #              ) -> None:
-    #     """
-    #     Constructor. Creates an instance of the Basel Precision Instruments 
-    #     LNHR DAC II SP1060 instrument.
 
-    #     Parameters:
-    #     name: Local name of this DAC
-    #     address: The VISA address of this DAC. For a serial port this is usually ASRLn::INSTR
-    #         n is replaced with the address set in the VISA control panel.
-    #     channel_number: Number of channels of this DAC
-    #     min_val: The minimum voltage that can be output by the DAC
-    #     max_val: The maximum voltage that can be output by the DAC
-    #     baud_rate: Set accordingly to the VISA control panel
-    #     """
-    #     # TODO: check "create channels" and "safety limits", check addition of channel_number
-
-    #     super().__init__(name, address, **kwargs)
-
-    #     # VISA resource properties
-    #     self.visa_handle.baud_rate = baud_rate
-    #     self.visa_handle.parity = visa.constants.Parity.none
-    #     self.visa_handle.stop_bits = visa.constants.StopBits.one
-    #     self.visa_handle.data_bits = 8
-    #     self.visa_handle.flow_control = visa.constants.VI_ASRL_FLOW_XON_XOFF
-    #     self.visa_handle.write_termination = "\r\n"
-    #     self.visa_handle.read_termination = "\r\n"
-
-    #     # protected properties for communication with device
-    #     self._ctrl_cmd_delay = 0.2
-    #     self._mem_write_delay = 0.3
-
-    #     # create channels of this device
-    #     channels = ChannelList(self, 
-    #                            "Channels", 
-    #                            SP1060Channel, 
-    #                            snapshotable = False,
-    #                            multichan_paramclass = SP1060MultiChannel
-    #                            )
-        
-    #     self.channel_number = channel_number
-        
-    #     for i in range(1, self.channel_number + 1):
-    #         channel = SP1060Channel(self, f"chan{i:1}", i)
-    #         channels.append(channel)
-    #         self.add_submodule(f"ch{i:1}", channel)
-    #     channels.lock()
-    #     self.add_submodule("channels", channels)
-
-    #     # Safety limits for sweeping DAC voltages
-    #     # inter_delay: Minimum time (in seconds) between successive sets.
-    #     #              If the previous set was less than this, it will wait until the
-    #     #              condition is met. Can be set to 0 to go maximum speed with
-    #     #              no errors.    
-         
-    #     # step: max increment of parameter value.
-    #     #       Larger changes are broken into multiple steps this size.
-    #     #       When combined with delays, this acts as a ramp.
-    #     for chan in self.channels:
-    #         chan.volt.inter_delay = 0.02
-    #         chan.volt.step = 0.01
-        
-    #     # display some information after instanciation/ initial connection
-    #     self.connect_message()
-    #     voltages = self.channels[:].volt.get()
-    #     print("Current DAC output (Channel 1 ... Channel 24): ")
-    #     print(voltages)
+        # display some information after instanciation/ initial connection
+        print("")
+        self.connect_message()
+        print("All channels have been turned off (1 MOhm Pull-Down to AGND) upon initialization "
+              + "and are pre-set to 0.0 V if turned on without setting a voltage beforehand.")
+        print("")
 
     #-------------------------------------------------
+
+    def get_idn(self) -> dict:
+        """
+        Get the identification of the device.
+
+        Returns:
+        dict: all QCodes required IDN fields
+        """
+        vendor = "Basel Precision Instruments GmbH (BASPI)"
+
+        hardware_info = self.__controller.get_serial()
+        name = hardware_info[0:11]
+        model_nr = hardware_info[12:18]
+        channels = hardware_info[52:54]
+        model = f"{name} ({model_nr}) {channels} channel version"
+
+        serial = hardware_info[37:51]
+
+        software_info = self.__controller.get_firmware()
+        firmware = software_info[18:33]
+
+        idn = {
+            "vendor": vendor,
+            "model": model,
+            "serial": serial,
+            "firmware": firmware
+        }
+
+        return idn
+
+
+# main -----------------------------------------------------------------
 
 if __name__ == "__main__":
 
     station = Station()
     dac = BaspiLnhrdac2('LNHRDAC', 'TCPIP0::192.168.0.5::23::SOCKET')
     station.add_component(dac)
+
     dac.ch1.status.set("on")
     dac.ch1.voltage.set(5.0)
     res = dac.ch1.voltage.get()
@@ -214,4 +188,3 @@ if __name__ == "__main__":
     res = dac.all.voltage.get()
     print(res)
     dac.ch17.high_bandwidth.set(True)
-    dac.ch17.high_bandwidth.set(1.58)
