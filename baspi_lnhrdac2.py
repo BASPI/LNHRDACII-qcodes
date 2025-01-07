@@ -41,6 +41,11 @@ class BaspiLnhrdac2Channel(InstrumentChannel):
         """
         Class that defines a channel of the LNHR DAC II with all its QCoDeS-parameters.
 
+        Channel-Parameters:
+        Voltage (-10.0 V ... +10.0 V)
+        High Bandwidth (ON/True: 100 kHz, OFF/False: 100 Hz)
+        Status (ON/True: channel on, OFF/False: channel off)
+
         Parameters:
         parent: instrument this channel is a part of
         name: name of the channel
