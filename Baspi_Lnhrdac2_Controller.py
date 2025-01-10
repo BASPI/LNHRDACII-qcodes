@@ -223,36 +223,36 @@ class BaspiLnhrdac2Controller():
 
     #-------------------------------------------------
 
-    def set_wav_memory_value(self, memory: str, address: int, dacvalue: int) -> str:
+    def set_wav_memory_value(self, memory: str, address: int, voltage: float) -> str:
         """
         Set a wave memory address to a specific value
 
         Parameters:
         memory: AWG memory to write into ("A", "B", "C" or "D")
         address: hexadecimal memory address (0x0 - 0x84CF)
-        dacvalue: hexadecimal value (0x0 - 0xFFFFFF)
+        voltage: voltage value (+/- 10.000000 V)
 
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
 
-        return self.write(f"wav-{memory} {address:x} {dacvalue:x}")
+        return self.write(f"wav-{memory} {address:x} {voltage:.6f}")
 
     #-------------------------------------------------
 
-    def set_wav_memory_all(self, memory: str, dacvalue: int) -> str:
+    def set_wav_memory_all(self, memory: str, voltage: float) -> str:
         """
         Set the full wave memory to a specific value
 
         Parameters:
         memory: AWG memory to write into ("A", "B", "C" or "D")
-        dacvalue: hexadecimal value (0x0 - 0xFFFFFF)
+        voltage: voltage value (+/- 10.000000 V)
 
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
 
-        return self.write(f"wav-{memory} all {dacvalue:x}")
+        return self.write(f"wav-{memory} all {voltage:.6f}")
     
     #-------------------------------------------------
     
@@ -1543,47 +1543,47 @@ class BaspiLnhrdac2Controller():
 
     #-------------------------------------------------
 
-    def get_swg_mode(self) -> str:
+    def get_swg_new(self) -> bool:
         """
         Read the mode for the SWG (generate new waveform or use saved 
         waveform)
 
         Returns:
-        string: generate new waveform (1) or use saved waveform (0)
+        bool: generate new waveform (True) or use saved waveform (False)
         """
 
-        return self.write("C SWG MODE?")
+        return bool(int(self.write("C SWG MODE?")))
 
     #-------------------------------------------------
 
-    def set_swg_mode(self, mode: int) -> str:
+    def set_swg_new(self, create_new: bool) -> str:
         """
         Set the mode for the SWG (generate new waveform or use saved 
         waveform)
 
         Parameters:
-        mode: generate new waveform (1) or use saved waveform (0)
+        create_new: generate new waveform (True) or use saved waveform (False)
 
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
 
-        return self.write(f"C SWG MODE {mode}")
+        return self.write(f"C SWG MODE {int(create_new)}")
     
     #-------------------------------------------------
 
-    def get_swg_shape(self) -> str:
+    def get_swg_shape(self) -> int:
         """
         Read the shape of the SWG (sine, triangle, sawtooth, ramp, 
         pulse, noise or DC voltage)
 
         Returns:
-        string: sine ("0"), triangle ("1"), sawtooth ("2"), ramp ("3"), 
-            pulse ("4"), fixed noise ("5"), random noise ("6") 
-            or DC voltage ("7")
+        int: sine (0), triangle (1), sawtooth (2), ramp (3), 
+            pulse (4), fixed noise (5), random noise (6) 
+            or DC voltage (7)
         """
 
-        return self.write("C SWG WF?")
+        return int(self.write("C SWG WF?"))
 
     #-------------------------------------------------
 
@@ -1604,20 +1604,20 @@ class BaspiLnhrdac2Controller():
    
     #-------------------------------------------------
 
-    def get_swg_desired_frequency(self) -> str:
+    def get_swg_desired_frequency(self) -> float:
         """
         Read the set desired SWG frequency (0.001 Hz - 10 kHz). Not all 
         frequencies can be reached, dependent on the clock period
 
         Returns:
-        string: desired frequency (0.001 Hz - 10 kHz)
+        float: desired frequency (0.001 Hz - 10 kHz)
         """
 
-        return self.write("C SWG DF?")
+        return float(self.write("C SWG DF?"))
 
     #-------------------------------------------------
 
-    def set_swg_desired_frequency(self, frequency: int) -> str:
+    def set_swg_desired_frequency(self, frequency: float) -> str:
         """
         Set the desired SWG frequency (0.001 Hz - 10 kHz). Not all 
         frequencies can be reached, dependent on the clock period
@@ -1633,7 +1633,7 @@ class BaspiLnhrdac2Controller():
     
     #-------------------------------------------------
 
-    def get_swg_adaptclock_state(self) -> str:
+    def get_swg_adapt_clock(self) -> int:
         """
         Read the state of the adaptive clock (keep AWG clock period or 
         adapt clock period). If set to adapt, the clock period gets 
@@ -1641,14 +1641,14 @@ class BaspiLnhrdac2Controller():
         as possible. This might affect the other AWG on the DAC board
 
         Returns:
-        string: keep AWG clock period ("0") or adapt clock period ("1")
+        int: keep AWG clock period (False) or adapt clock period (True)
         """
 
-        return self.write("C SWG ACLK?")
+        return bool(int(self.write("C SWG ACLK?")))
 
     #-------------------------------------------------
 
-    def set_swg_adaptclock_state(self, state: int) -> str:
+    def set_swg_adapt_clock(self, adapt: bool) -> str:
         """
         Set the state of the adaptive clock (keep AWG clock period or 
         adapt clock period). If set to adapt, the clock period gets 
@@ -1656,17 +1656,17 @@ class BaspiLnhrdac2Controller():
         as possible. This might affect the other AWG on the DAC board
 
         Parameters:
-        state: keep AWG clock period ("0") or adapt clock period ("1")
+        adapt: keep AWG clock period (False) or adapt clock period (True)
 
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
 
-        return self.write(f"C SWG ACLK {state}")
+        return self.write(f"C SWG ACLK {adapt}")
     
     #-------------------------------------------------
 
-    def get_swg_amplitude(self) -> str:
+    def get_swg_amplitude(self) -> float:
         """
         Read the set SWG amplitude (peak voltage). For noise this is 
         the RMS value
@@ -1675,7 +1675,7 @@ class BaspiLnhrdac2Controller():
         string: amplitude (+/- 50.000000 V)
         """
 
-        return self.write("C SWG AMP?")
+        return float(self.write("C SWG AMP?"))
 
     #-------------------------------------------------
 
@@ -1695,7 +1695,7 @@ class BaspiLnhrdac2Controller():
     
     #-------------------------------------------------
 
-    def get_swg_offset(self) -> str:
+    def get_swg_offset(self) -> float:
         """
         Set the SWG DC offset voltage
 
@@ -1703,7 +1703,7 @@ class BaspiLnhrdac2Controller():
         offset: DC offset voltage (+/- 10.000000 V)
         """
 
-        return self.write("C SWG DCV?")
+        return float(self.write("C SWG DCV?"))
 
     #-------------------------------------------------
 
@@ -1722,7 +1722,7 @@ class BaspiLnhrdac2Controller():
     
     #-------------------------------------------------
 
-    def get_swg_phase(self) -> str:
+    def get_swg_phase(self) -> float:
         """
         Read the SWG phase shift. Not applacable to noise, ramp 
         and DC offset
@@ -1731,7 +1731,7 @@ class BaspiLnhrdac2Controller():
         string: phase shift (+/- 360.0000°)
         """
 
-        return self.write("C SWG PHA?")
+        return float(self.write("C SWG PHA?"))
 
     #-------------------------------------------------
 
@@ -1751,16 +1751,16 @@ class BaspiLnhrdac2Controller():
     
     #-------------------------------------------------
 
-    def get_swg_dutycycle(self) -> str:
+    def get_swg_dutycycle(self) -> float:
         """
         Read the SWG duty cylce for the pulse waveform function. A high 
         level is applied for the set percentage of the waveforms period
 
         Returns:
-        string: duty cycle (0.000 % - 100.000 %)
+        float: duty cycle (0.000 % - 100.000 %)
         """
 
-        return self.write("C SWG DUC?")
+        return float(self.write("C SWG DUC?"))
 
     #-------------------------------------------------
 
@@ -1780,45 +1780,45 @@ class BaspiLnhrdac2Controller():
 
     #-------------------------------------------------
 
-    def get_swg_memory_size(self) -> str:
+    def get_swg_memory_size(self) -> int:
         """
         Read the size of the wave memory
         
         Returns:
-        string: wave memory size (10 - 34000)
+        int: wave memory size (10 - 34000)
         """
 
-        return self.write("C SWG MS?")
+        return int(self.write("C SWG MS?"))
 
     #-------------------------------------------------
 
-    def get_swg_nearest_frequency(self) -> str:
+    def get_swg_nearest_frequency(self) -> float:
         """
         Read the actual SWG frequency (0.001 Hz - 10 kHz). 
         Since not all frequencies can be reached, the closest frequency 
         to the set desired frequency is internally calculated and used
 
         Returns:
-        string: SWG frequency (0.001 Hz - 10 kHz)
+        float: SWG frequency (0.001 Hz - 10 kHz)
         """
-        return self.write("C SWG NF?")
+        return float(self.write("C SWG NF?"))
 
     #-------------------------------------------------
 
-    def get_swg_clipping_status(self) -> str:
+    def get_swg_clipping_status(self) -> bool:
         """
         Read the waveform clipping status. If the waveform exceeds the 
         devices limits (+/- 10.0 V) anywhere, the waveform is clipping 
         
         Returns:
-        string: waveform is clipping ("1") or not clipping ("0")
+        string: waveform is clipping (True) or not clipping (False)
         """
 
-        return self.write("C SWG CLP?")
+        return bool(int(self.write("C SWG CLP?")))
     
     #-------------------------------------------------
 
-    def get_swg_clock_period(self) -> str:
+    def get_swg_clock_period(self) -> int:
         """
         Read the SWG clock period in us (micro seconds). This reads 
         the value that will be used during the waveform generation. 
@@ -1826,25 +1826,25 @@ class BaspiLnhrdac2Controller():
         influence or be influenced by another AWG
 
         Returns:
-        string: clock period in us (micro seconds) (10 - 4000000000)
+        int: clock period in us (micro seconds) (10 - 4000000000)
         """
 
-        return self.write("C SWG CP?")
+        return int(self.write("C SWG CP?"))
     
     #-------------------------------------------------
 
-    def get_swg_wav_memory(self) -> str:
+    def get_swg_wav_memory(self) -> int:
         """
         Read the selected wave memory into which the SWG saves the 
         generated waveform. Each AWG memory has an associated wave 
         memory ("A", "B", "C" or "D")
 
         Returns:
-        string: selected wave memory A ("0"), B ("1"), C ("2") 
-            or D ("3") 
+        int: selected wave memory A (0), B (1), C (2) 
+            or D (3) 
         """
 
-        return self.write("C SWG WMEM?")
+        return int(self.write("C SWG WMEM?"))
 
     #-------------------------------------------------
 
@@ -1865,22 +1865,22 @@ class BaspiLnhrdac2Controller():
 
     #-------------------------------------------------
 
-    def get_swg_selected_operation(self) -> str:
+    def get_swg_selected_operation(self) -> int:
         """
         Read the selected wave memory operation that will be applied 
         with the command "Apply to wave memory now" 
         (apply_swg_operation()), represented by a number
 
         Returns:
-        string: select operation "overwrite wave memory" ("0"), "append 
-            to start of memory" ("1"), "append to end of memory" ("2"), 
-            "sum to start of memory" ("3"), "sum to end of memory" ("4"), 
-            "multiply to start of memory" ("5"), "multiply to end of 
-            memory" ("6"), "divide to start of memory" ("7") 
-            or "divide to end of memory" ("8")
+        int: select operation "overwrite wave memory" (0), "append 
+            to start of memory" (1), "append to end of memory" (2), 
+            "sum to start of memory" (3), "sum to end of memory" (4), 
+            "multiply to start of memory" (5), "multiply to end of 
+            memory" (6), "divide to start of memory" (7) 
+            or "divide to end of memory" (8)
         """
 
-        return self.write("C SWG WFUN?")
+        return int(self.write("C SWG WFUN?"))
 
     #-------------------------------------------------
 
@@ -1904,34 +1904,34 @@ class BaspiLnhrdac2Controller():
     
     #-------------------------------------------------
 
-    def get_swg_linearization_state(self) -> str:
+    def get_swg_linearization(self) -> bool:
         """
         Read if the output linearization will be applied, when writing 
         a wave memory's contents to its associated AWG memory
 
         Returns:
-        string: apply linearization ("1") or do not apply 
-            linearization ("0")
+        string: apply linearization (True) or do not apply 
+            linearization (False)
         """
 
-        return self.write("C SWG LIN?")
+        return bool(int(self.write("C SWG LIN?")))
 
     #-------------------------------------------------
 
-    def set_swg_linearization_state(self, state: int) -> str:
+    def set_swg_linearization(self, apply: bool) -> str:
         """
         Set if the output linearization will be applied, when writing a 
         wave memory's contents to its associated AWG memory. A channel 
         must be assigned to the associated AWG
 
         Parameters:
-        state: apply linearization (1) or do not apply linearization (0)
+        apply: apply linearization (True) or do not apply linearization (False)
 
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
 
-        return self.write(f"C SWG LIN {state}")
+        return self.write(f"C SWG LIN {int(apply)}")
     
     #-------------------------------------------------
 
@@ -1955,15 +1955,18 @@ class BaspiLnhrdac2Controller():
 
     #-------------------------------------------------
 
-    def get_wav_memory_size(self, wav: str) -> str:
+    def get_wav_memory_size(self, wav: str) -> int:
         """
         Read the size of a wave memory ("A", "B", "C", "D" or "S")
 
         Parameters:
         wav: wave memory ("A", "B", "C", "D" or "S")
+
+        Returns:
+        int: number of points saved in the memory (0 - 34000)
         """
 
-        return self.write(f"C WAV-{wav} MS?")
+        return int(self.write(f"C WAV-{wav} MS?"))
 
     #-------------------------------------------------
 
@@ -1999,7 +2002,7 @@ class BaspiLnhrdac2Controller():
 
     #-------------------------------------------------
 
-    def get_wav_linearization_channel(self, wav: str) -> str:
+    def get_wav_linearization_channel(self, wav: str) -> int:
         """
         Read which DAC channel is associated to a wave memory. The 
         output linearization will be applied to this channel when 
@@ -2009,11 +2012,11 @@ class BaspiLnhrdac2Controller():
         wav: wave memory ("A", "B", "C" or "D")
 
         Returns:
-        string: associated channel for linearization ("1" - "24"), 
-            "0" if no linearization will be applied
+        string: associated channel for linearization (1 - 24), 
+            0 if no linearization will be applied
         """
 
-        return self.write(f"C WAV-{wav} LINCH?")
+        return int(self.write(f"C WAV-{wav} LINCH?"))
     
     #-------------------------------------------------
     
@@ -2033,19 +2036,19 @@ class BaspiLnhrdac2Controller():
     
     #-------------------------------------------------
 
-    def get_wav_memory_busy(self, wav: str) -> str:
+    def get_wav_memory_busy(self, wav: str) -> bool:
         """
         Read the state of the wave memory busy flag. If set, 
-        the wave memory is written to its associated AWG memory
+        the wave memory is currently being written to its associated AWG memory
 
         Parameters: 
         wav: wave/ AWG memory ("A", "B", "C" or "D")
 
         Returns:
-        string: wave memonry busy ("1") or not busy ("0")
+        string: wave memonry busy (True) or not busy (False)
         """
 
-        return self.write(f"C WAV-{wav} BUSY?")
+        return bool(int(self.write(f"C WAV-{wav} BUSY?")))
 
 
 # main -----------------------------------------------------------------
