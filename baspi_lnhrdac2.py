@@ -22,6 +22,7 @@ import qcodes.validators as validate
 
 from functools import partial
 from time import sleep
+from warnings import warn
 
 # logging --------------------------------------------------------------
 
@@ -126,13 +127,6 @@ class BaspiLnhrdac2AWG(InstrumentModule):
             initial_value = 0
         )
 
-        self.swg = self.add_parameter(
-            name = "swg",
-            get_cmd = None,
-            set_cmd = None,
-            initial_value = None
-        )
-
         self.waveform = self.add_parameter(
             name = "waveform",
             get_cmd = partial(self.__get_awg_waveform, awg),
@@ -146,6 +140,12 @@ class BaspiLnhrdac2AWG(InstrumentModule):
             set_cmd = partial(self.__controller.set_awg_trigger_mode, awg),
             val_mapping = {"disable": 0, "start only": 1, "start stop": 2, "single step": 3},
             initial_value = "disable"
+        )
+
+        self.enable = self.add_parameter(
+            name = "enable",
+            get_cmd = None,
+            set_cmd = None
         )
 
     #-------------------------------------------------
@@ -179,7 +179,7 @@ class BaspiLnhrdac2AWG(InstrumentModule):
 
         if len(memory) != memory_size:
             raise MemoryError("Error occured while reading the devices memory.")   
-
+        
         return memory
 
     #-------------------------------------------------
@@ -197,7 +197,7 @@ class BaspiLnhrdac2AWG(InstrumentModule):
 
         for address in range(0, len(waveform)):
             self.__controller.set_wav_memory_value(awg, address, float(waveform[address]))
-        
+
         sleep(0.2) # sleep bc bad firmware
         memory_size = self.__controller.get_wav_memory_size(awg)
 
@@ -207,40 +207,87 @@ class BaspiLnhrdac2AWG(InstrumentModule):
         self.__controller.write_wav_to_awg(awg)
         while self.__controller.get_wav_memory_busy(awg):
             pass
-        
+
+
+# class ----------------------------------------------------------------
+
+class BaspiLnhrdac2SWG(InstrumentModule):
+
+    def __init__(self, parent: VisaInstrument, name: str, controller: BaspiLnhrdac2Controller):
+        """
+        Class defining the Standard Waveform Generator (SWG) module of the LNHR DAC II with all its Qcodes Parameters.
+
+        SWG-Parameters:
+        configuration: 
+        apply: 
+
+        Parameters:
+        parent: instrument this channel is a part of
+        name: name of the module
+        controller: the controller the instrument uses for its communication
+        """
+
+        super().__init__(parent, name)
+
+        self.__controller = controller
+
+        self.awg = self.add_parameter(
+            name = "awg",
+            get_cmd = self.__controller.get_swg_wav_memory,
+            set_cmd = self.__controller.set_swg_wav_memory
+        )
+
+        self.configuration = self.add_parameter(
+            name = "configuration",
+            get_cmd = self.__get_configuration,
+            set_cmd = self.__set_configuration
+        )
+    
     #-------------------------------------------------
 
-    def __get_swg_configuration():
+    def __get_configuration(self) -> list:
         pass
 
     #-------------------------------------------------
 
-    def __set_swg_configuration(self,
-                                awg: str,
-                                shape: str = "sine",
-                                frequency: float = 1.0,
-                                amplitude: float = 0.5,
-                                offset: float = 0.0,
-                                phase: float = 0.0,
-                                dutycyle: float = 50.0):
+    def __set_configuration(self, user_config: dict) -> None:
         """
-        Create a waveform using the standard waveform generator.
+        Create a waveform using the standard waveform generator. The resulting waveform is automatically written into the waveform memory.
+
+        user_config-Parameters:
+        shape: "sine", "cosine, "triangle", "sawtooth", "ramp", "rectangle", "pulse", "fixed noise", "random noise" or "DC"
+        frequency: signal frequency in Hz (0.001 Hz - 10000 Hz)
+        amplitude: signal amplitude in V (+/- 10.000 V)
+        offset: signal DC-offset (+/- 10.000 V)
+        phase: signal phaseshift in ° (deg) (+/- 360.000°)
+        dutycycle: signal dutycycle in % (0.0 - 100.0), only applicable with shape "pulse"
 
         Parameters:
-        shape:
-        frequency:
-        amplitude:
-        offset:
-        phase:
-        dutycycle:
+        awg: selected AWG
+        user_config: dictionary containing SWG configuration
 
         """
+        
+        swg_config = {
+            "shape": "sine",
+            "frequency": 100.0,
+            "amplitude": 0.5,
+            "offset": 0.0,
+            "phase": 0.0,
+            "dutycycle": 50.0
+        }
+
+        # overwrite defaults if specified
+        for key in user_config.keys():
+            if key in swg_config.keys():
+                swg_config[key] = user_config[key]
+            else:
+                raise KeyError(f"Key '{key}' is invalid. Valid keys are: {list(swg_config.keys())}")
 
         self.__controller.set_swg_new(True)
 
-        # only adapt clock if other AWG is unused
-        awg_pairs = {"a":"b","b":"a","c":"d","d":"c"}
-        self.__controller.set_swg_adapt_clock(not (self.__controller.get_awg_memory_size(awg_pairs[awg]) > 2))
+        # always use "adapt clock" here, clock gets checked again in swg.apply
+        self.__controller.set_swg_adapt_clock(True)
 
         # specify waveform
         awg_shapes = {"sine": 0,
@@ -253,24 +300,57 @@ class BaspiLnhrdac2AWG(InstrumentModule):
                       "fixed noise": 5,
                       "random noise": 6,
                       "DC": 7}
-        
-        self.__controller.set_swg_shape(awg_shapes[shape])
-        self.__controller.set_swg_desired_frequency(frequency)
-        self.__controller.set_swg_amplitude(amplitude)
-        self.__controller.set_swg_offset(offset)
 
-        if shape == "cosine":
-            self.__controller.set_swg_phase(phase + 90.0)
+        if swg_config["shape"] not in awg_shapes:
+            raise ValueError(f"Value '{swg_config["shape"]}' is invalid. Valid values are: {list(awg_shapes.keys())}.")
+        
+        self.__controller.set_swg_shape(awg_shapes[swg_config["shape"]])
+        self.__controller.set_swg_desired_frequency(swg_config["frequency"])
+        self.__controller.set_swg_amplitude(swg_config["amplitude"])
+        self.__controller.set_swg_offset(swg_config["offset"])
+
+        if swg_config["shape"] == "cosine":
+            self.__controller.set_swg_phase(swg_config["phase"] + 90.0)
         else:
-            self.__controller.set_swg_phase(phase)
-        
-        if shape == "rectangle":
+            self.__controller.set_swg_phase(swg_config["phase"])
+        if swg_config["shape"] == "rectangle":
             self.__controller.set_swg_dutycycle(50.0)
-        elif shape == "pulse":
-            self.__controller.set_swg_dutycycle(dutycyle)
-        
-        # write waveform to memory       
-        
+        elif swg_config["shape"] == "pulse":
+            self.__controller.set_swg_dutycycle(swg_config["dutycycle"])
+
+     #-------------------------------------------------
+
+    def apply(self) -> None:
+        """
+        Apply the SWG configuration to an AWG waveform.
+
+        Parameters:
+        awg: selected AWG
+        """
+
+        awg = self.__controller.get_swg_wav_memory().lower()
+
+        # decide on keep or adapt clock period
+        other_awg = {"a": "b", "b": "a", "c": "d", "d": "c"}
+        other_awg_size = self.__controller.get_awg_memory_size(other_awg[awg])
+        if other_awg_size > 2:
+            self.__controller.set_swg_adapt_clock(False)
+        else:
+            self.__controller.set_swg_adapt_clock(True)
+
+        desired_frequency = self.__controller.get_swg_desired_frequency()
+        nearest_frequency = self.__controller.get_swg_nearest_frequency()
+        if nearest_frequency != desired_frequency:
+            warn(f"Frequency of {desired_frequency} Hz cannot be reached with the current settings. "
+                + f"A frequency of {nearest_frequency} Hz is used instead. "
+                + f"Changing AWG or clearing unused AWG waveforms might resolve this issue.")
+
+        # apply SWG configuration to AWG waveform
+        self.__controller.apply_swg_operation()
+        self.__controller.write_wav_to_awg(awg)
+        while self.__controller.get_wav_memory_busy(awg):
+            pass
+  
 
 # class ----------------------------------------------------------------
 
@@ -331,6 +411,11 @@ class BaspiLnhrdac2(VisaInstrument):
             name = f"awg{awg_designator}"
             awg = BaspiLnhrdac2AWG(self, name, awg_designator, self.__controller)
             self.add_submodule(name, awg)
+
+        # create SWG parameter, only one is allowed
+        name = "swg"
+        swg = BaspiLnhrdac2SWG(self, name, self.__controller)
+        self.add_submodule(name, swg)
 
         # display some information after instanciation/ initial connection
         print("")
@@ -394,10 +479,31 @@ if __name__ == "__main__":
     dac.awgc.trigger.set("single step")
     print(dac.awgc.trigger.get())
 
-    wave = dac.awga.waveform.get()
-    dac.awgb.waveform.set(wave)
+    # wave = dac.awga.waveform.get()
+    # dac.awgb.waveform.set(wave)
 
+    # swg_config = {
+    #     "shape": "rectangle",
+    #     "frequency": 250,
+    #     "amplitude": 0.5,
+    #     }
 
+    # dac.awgd.swg.set(swg_config)
+    # print(dac.awgd.waveform.get())
 
+    print("---")
 
+    swg_config = {
+        "shape": "sine",
+        "frequency": 100,
+        "amplitude": 0.5,
+        }
+
+    dac.swg.configuration.set(swg_config)
+    dac.swg.awg.set("A")
+    dac.swg.apply()
+    print("check clock period now")
+    sleep(10)
+    dac.awgb.waveform.set([])
+    dac.swg.apply()
 

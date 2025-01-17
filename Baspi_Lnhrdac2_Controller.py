@@ -68,7 +68,7 @@ class BaspiLnhrdac2Controller():
         # synchronisation of all the devices variables
         if command[0].lower() == "c":
             sleep(self.__ctrl_cmd_delay)
-            if "write" in command:
+            if "write" or "apply" in command:
                 sleep(self.__mem_write_delay)
 
         return answer
@@ -1227,7 +1227,7 @@ class BaspiLnhrdac2Controller():
 
     #-------------------------------------------------
 
-    def get_awg_board_mode(self, board: str) -> str:
+    def get_awg_board_mode(self, board: str) -> bool:
         """
         Read the set AWG mode of a DAC board (AWG-A/B or AWG-C/D). In 
         normal mode, all outputs can be used for noraml operation. In 
@@ -1237,10 +1237,10 @@ class BaspiLnhrdac2Controller():
         board: lower DAC board ("AB") or higher DAC board ("CD")
 
         Returns:
-        string: normal mode ("0") or AWG-only mode ("1")
+        bool: normal mode (False) or AWG-only mode (True)
         """
 
-        return self.write(f"C AWG-{board} ONLY?")
+        return bool(int(self.write(f"C AWG-{board} ONLY?")))
 
     #-------------------------------------------------
 
@@ -1278,7 +1278,7 @@ class BaspiLnhrdac2Controller():
     
     #-------------------------------------------------
 
-    def get_awg_state(self, awg: str) -> str:
+    def get_awg_run_state(self, awg: str) -> bool:
         """
         Read the current state of operation of an AWG
 
@@ -1286,14 +1286,14 @@ class BaspiLnhrdac2Controller():
         awg: AWG ("A", "B", "C" or "D")
 
         Returns:
-        string: AWG is idle/not running ("0") or AWG is running ("1")
+        bool: AWG is idle/not running (False) or AWG is running (True)
         """
 
-        return self.write(f"C AWG-{awg} S?")
+        return bool(int(self.write(f"C AWG-{awg} S?")))
 
     #-------------------------------------------------
 
-    def get_awg_cycles_done(self, awg: str) -> str: 
+    def get_awg_cycles_done(self, awg: str) -> int: 
         """
         Read the number of cycles that have been completed by an AWG.
         This value is internally reset on each AWG start
@@ -1302,14 +1302,14 @@ class BaspiLnhrdac2Controller():
         awg: AWG ("A", "B", "C" or "D")
 
         Returns:
-        string: completed AWG cycles (0 - 4000000000)
+        int: completed AWG cycles (0 - 4000000000)
         """
 
-        return self.write(f"C AWG-{awg} CD?")
+        return int(self.write(f"C AWG-{awg} CD?"))
     
     #-------------------------------------------------
 
-    def get_awg_duration(self, awg: str) -> str:
+    def get_awg_duration(self, awg: str) -> float:
         """
         Read the internally calculated duration of one complete AWG cycle
 
@@ -1317,14 +1317,14 @@ class BaspiLnhrdac2Controller():
         awg: AWG ("A", "B", "C" or "D")
 
         Returns:
-        string: AWG cycle duration (0.00002 s - 136000000 s)
+        float: AWG cycle duration (0.00002 s - 136000000 s)
         """
 
-        return self.write(f"C AWG-{awg} DP?")
+        return float(self.write(f"C AWG-{awg} DP?"))
     
     #-------------------------------------------------
 
-    def get_awg_channel_availability(self, awg: str) -> str: 
+    def get_awg_channel_available(self, awg: str) -> bool: 
         """
         Read the current availability for the selected output channel of an 
         AWG. A channel is only available if there is no AWG running on it
@@ -1333,14 +1333,14 @@ class BaspiLnhrdac2Controller():
         awg: AWG ("A", "B", "C" or "D")
 
         Returns:
-        string: DAC channel is not available ("0") or is available ("1")
+        bool: DAC channel is not available (False) or is available (True)
         """
 
-        return self.write(f"C AWG-{awg} AVA?")
+        return bool(int(self.write(f"C AWG-{awg} AVA?")))
     
     #-------------------------------------------------
 
-    def get_awg_channel(self, awg: str) -> str:
+    def get_awg_channel(self, awg: str) -> int:
         """
         Read the selected output channel of an AWG
 
@@ -1348,10 +1348,10 @@ class BaspiLnhrdac2Controller():
         awg: AWG ("A", "B", "C" or "D")
 
         Returns:
-        string: selected DAC channel ("1" - "24"), depending on AWG
+        int: selected DAC channel (1 - 24), depending on AWG
         """
 
-        return self.write(f"C AWG-{awg} CH?")
+        return int(self.write(f"C AWG-{awg} CH?"))
     
     #-------------------------------------------------
 
@@ -1371,7 +1371,7 @@ class BaspiLnhrdac2Controller():
     
     #-------------------------------------------------
 
-    def get_awg_memory_size(self, awg: str) -> str:
+    def get_awg_memory_size(self, awg: str) -> int:
         """
         Read the size of an AWG memory
 
@@ -1379,10 +1379,10 @@ class BaspiLnhrdac2Controller():
         awg: AWG ("A", "B", "C" or "D")
 
         Returns:
-        string: AWG memory size ("2" - "34000")
+        int: AWG memory size (2 - 34000)
         """
 
-        return self.write(f"C AWG-{awg} MS?")
+        return int(self.write(f"C AWG-{awg} MS?"))
 
     #-------------------------------------------------
 
@@ -1402,7 +1402,7 @@ class BaspiLnhrdac2Controller():
     
     #-------------------------------------------------
 
-    def get_awg_cycles(self, awg: str) -> str:
+    def get_awg_cycles(self, awg: str) -> int:
         """
         Read the set number of AWG cycles. Upon completing the set 
         cycles, the AWG is stopped
@@ -1411,10 +1411,10 @@ class BaspiLnhrdac2Controller():
         awg: AWG ("A", "B", "C" or "D")
 
         Returns:
-        string: AWG cycles (0 - 4000000000)
+        int: AWG cycles (0 - 4000000000)
         """
 
-        return self.write(f"C AWG-{awg} CS?")
+        return int(self.write(f"C AWG-{awg} CS?"))
 
     #-------------------------------------------------
 
@@ -1435,7 +1435,7 @@ class BaspiLnhrdac2Controller():
 
     #-------------------------------------------------
 
-    def get_awg_trigger_mode(self, awg: str) -> str:
+    def get_awg_trigger_mode(self, awg: str) -> int:
         """
         Read the external trigger mode of an AWG. The external trigger 
         can be disabled, only trigger the start, trigger the start and 
@@ -1445,12 +1445,12 @@ class BaspiLnhrdac2Controller():
         awg: AWG ("A", "B", "C" or "D")
 
         Returns:
-        string: external trigger is disabled ("0"), only triggers the start
-            of an AWG ("1"), triggers start and stop of an AWG ("2"), or
-            triggers every single step of an AWG ("3")
+        int: external trigger is disabled (0), only triggers the start
+            of an AWG (1), triggers start and stop of an AWG (2), or
+            triggers every single step of an AWG (3)
         """
 
-        return self.write(f"C AWG-{awg} TM?")
+        return int(self.write(f"C AWG-{awg} TM?"))
 
     #-------------------------------------------------
 
@@ -1462,9 +1462,9 @@ class BaspiLnhrdac2Controller():
 
         Parameters:
         awg: AWG ("A", "B", "C" or "D")
-        mode: external trigger is disabled ("0"), only triggers the start
-            of an AWG ("1"), triggers start and stop of an AWG ("2"), or
-            triggers every single step of an AWG ("3")
+        mode: external trigger is disabled (0), only triggers the start
+            of an AWG (1), triggers start and stop of an AWG (2), or
+            triggers every single step of an AWG (3)
 
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
@@ -1474,7 +1474,7 @@ class BaspiLnhrdac2Controller():
 
     #-------------------------------------------------
 
-    def get_awg_clock_period(self, board: str) -> str:
+    def get_awg_clock_period(self, board: str) -> int:
         """
         Read the AWG clock period of a DAC board (AWG-A/B or AWG-C/D) 
         in us (micro-seconds)
@@ -1483,10 +1483,10 @@ class BaspiLnhrdac2Controller():
         board: DAC board ("AB" or "CD")
 
         Returns:
-        string: clock period (10 us - 4000000000 us (micro-seconds))
+        int: clock period (10 us - 4000000000 us (micro-seconds))
         """
 
-        return self.write(f"C AWG-{board} CP?")
+        return int(self.write(f"C AWG-{board} CP?"))
 
     #-------------------------------------------------
 
@@ -1525,7 +1525,7 @@ class BaspiLnhrdac2Controller():
         Turn the 1 MHz reference clock on or off
 
         Parameters:
-        state: reference clock on ("1") or off ("0")
+        state: reference clock on (1) or off (0)
 
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
@@ -1568,7 +1568,7 @@ class BaspiLnhrdac2Controller():
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
 
-        return self.write(f"C SWG MODE {int(create_new)}")
+        return self.write(f"C SWG MODE {int(not create_new)}")
     
     #-------------------------------------------------
 
@@ -1662,7 +1662,7 @@ class BaspiLnhrdac2Controller():
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
 
-        return self.write(f"C SWG ACLK {adapt}")
+        return self.write(f"C SWG ACLK {int(adapt)}")
     
     #-------------------------------------------------
 
@@ -1833,35 +1833,36 @@ class BaspiLnhrdac2Controller():
     
     #-------------------------------------------------
 
-    def get_swg_wav_memory(self) -> int:
+    def get_swg_wav_memory(self) -> str:
         """
         Read the selected wave memory into which the SWG saves the 
         generated waveform. Each AWG memory has an associated wave 
         memory ("A", "B", "C" or "D")
 
         Returns:
-        int: selected wave memory A (0), B (1), C (2) 
-            or D (3) 
+        string: selected wave memory "A", "B", "C" or "D"
         """
 
-        return int(self.write("C SWG WMEM?"))
+        parse = {"0": "A", "1": "B", "2": "C", "3": "D"}
+        return parse[self.write("C SWG WMEM?")]
 
     #-------------------------------------------------
 
-    def set_swg_wav_memory(self, wav: int) -> str:
+    def set_swg_wav_memory(self, wav: str) -> str:
         """
         Select the wave memory into which the SWG saves the generated 
         waveform. Each AWG memory has an associated 
         wave memory ("A", "B", "C" or "D")
 
         Parameters:
-        wav: select wave memory A (0), B (1), C (2) or D (3)
+        wav: select wave memory "A", "B", "C" or "D"
 
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
-        
-        return self.write(f"C SWG WMEM {wav}")
+
+        parse = {"a": 0, "b": 1, "c": 2, "d": 3}
+        return self.write(f"C SWG WMEM {parse[wav.lower()]}")
 
     #-------------------------------------------------
 
