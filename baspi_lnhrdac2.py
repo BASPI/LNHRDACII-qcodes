@@ -13,7 +13,6 @@
 # imports --------------------------------------------------------------
 
 from Baspi_Lnhrdac2_Controller import BaspiLnhrdac2Controller
-from Baspi_Lnhrdac2_Parser import BaspiLnhrdac2Parser as parser
 
 from qcodes.station import Station
 from qcodes.instrument import VisaInstrument, InstrumentChannel, ChannelList, InstrumentModule
@@ -61,8 +60,8 @@ class BaspiLnhrdac2Channel(InstrumentChannel):
             unit = "V",
             get_cmd = partial(controller.get_channel_dacvalue, channel),
             set_cmd = partial(controller.set_channel_dacvalue, channel),
-            get_parser = parser.dacval_to_vval,
-            set_parser = parser.vval_to_dacval,
+            get_parser = BaspiLnhrdac2Controller.dacval_to_vval,
+            set_parser = BaspiLnhrdac2Controller.vval_to_dacval,
             vals = validate.Numbers(min_value = -10.0, max_value = 10.0),
             initial_value = 0.0
         )
@@ -144,8 +143,10 @@ class BaspiLnhrdac2AWG(InstrumentModule):
 
         self.enable = self.add_parameter(
             name = "enable",
-            get_cmd = None,
-            set_cmd = None
+            get_cmd = partial(self.__controller.get_awg_run_state, awg),
+            set_cmd = partial(self.__controller.set_awg_start_stop, awg),
+            val_mapping = create_on_off_val_mapping(on_val = "START" or True, off_val = "STOP" or False),
+            initial_value = False
         )
 
     #-------------------------------------------------

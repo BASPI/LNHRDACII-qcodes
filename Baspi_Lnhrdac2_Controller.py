@@ -39,6 +39,38 @@ class BaspiLnhrdac2Controller():
 
     #-------------------------------------------------
 
+    @staticmethod
+    def vval_to_dacval(vval: float) -> int:
+        """
+        Convert a LNHR DAC II voltage into an internal hexadecimal value
+
+        Parameters:
+        vval: voltage value in V
+
+        Returns:
+        int: hexadecimal value, used internally by the DAC
+        """
+
+        return round((float(vval) + 10.000000) * 838860.74)
+
+    #-------------------------------------------------
+
+    @staticmethod
+    def dacval_to_vval(dacval: int) -> float:
+        """
+        Convert a LNHR DAC II internal hexadecimal value into a voltage
+
+        Parameters:
+        dacval: hexadecimal value, used internally by the DAC
+        
+        Returns:
+        float: voltage value in V
+        """
+
+        return round((int(dacval.strip(), 16) / 838860.74) - 10.000000, 6)
+
+    #-------------------------------------------------
+
     def write(self, command: str) -> Optional[str]:
         """
         Sends a command or a query to the device. This method overrides 
@@ -120,6 +152,7 @@ class BaspiLnhrdac2Controller():
 
         Parameters:
         channel: DAC channel (1 - 24)
+        status: "ON" or "OFF"
 
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
@@ -132,6 +165,9 @@ class BaspiLnhrdac2Controller():
     def set_all_status(self, status: str) -> str:
         """
         Turn all DAC channels on or off
+
+        Parameters:
+        status: "ON" or "OFF"
 
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
@@ -1288,9 +1324,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         bool: AWG is idle/not running (False) or AWG is running (True)
         """
-
         return bool(int(self.write(f"C AWG-{awg} S?")))
-
     #-------------------------------------------------
 
     def get_awg_cycles_done(self, awg: str) -> int: 
