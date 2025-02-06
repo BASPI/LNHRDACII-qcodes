@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------------------------------------------------------------------------
-# LNHR DAC II QCoDeS controller class
+# LNHR DAC II QCoDeS driver controller class
 # v0.2.0
 # Copyright (c) Basel Precision Instruments GmbH (2024)
 #
@@ -42,7 +42,7 @@ class BaspiLnhrdac2Controller():
     @staticmethod
     def vval_to_dacval(vval: float) -> int:
         """
-        Convert a LNHR DAC II voltage into an internal hexadecimal value
+        Convert a LNHR DAC II voltage into an internal hexadecimal value.
 
         Parameters:
         vval: voltage value in V
@@ -58,7 +58,7 @@ class BaspiLnhrdac2Controller():
     @staticmethod
     def dacval_to_vval(dacval: int) -> float:
         """
-        Convert a LNHR DAC II internal hexadecimal value into a voltage
+        Convert a LNHR DAC II internal hexadecimal value into a voltage.
 
         Parameters:
         dacval: hexadecimal value, used internally by the DAC

@@ -16,10 +16,11 @@ from Baspi_Lnhrdac2_Controller import BaspiLnhrdac2Controller
 
 from qcodes.station import Station
 from qcodes.instrument import VisaInstrument, InstrumentChannel, ChannelList, InstrumentModule
-from qcodes.parameters import create_on_off_val_mapping
+from qcodes.parameters import ParameterWithSetpoints, create_on_off_val_mapping
 import qcodes.validators as validate
 
 from functools import partial
+from dataclasses import dataclass
 from time import sleep
 from warnings import warn
 
@@ -115,7 +116,8 @@ class BaspiLnhrdac2AWG(InstrumentModule):
             name = "channel",
             get_cmd = partial(self.__controller.get_awg_channel, awg),
             set_cmd = partial(self.__controller.set_awg_channel, awg),
-            vals = validate.Ints(min_value=1, max_value=24)
+            vals = validate.Ints(min_value=1, max_value=24),
+            initial_value = None
         )
 
         self.cycles = self.add_parameter(
@@ -128,6 +130,7 @@ class BaspiLnhrdac2AWG(InstrumentModule):
 
         self.waveform = self.add_parameter(
             name = "waveform",
+            # parameter_class = ParameterWithSetpoints,
             get_cmd = partial(self.__get_awg_waveform, awg),
             set_cmd = partial(self.__set_awg_waveform, awg),
             initial_value = None
@@ -145,9 +148,21 @@ class BaspiLnhrdac2AWG(InstrumentModule):
             name = "enable",
             get_cmd = partial(self.__controller.get_awg_run_state, awg),
             set_cmd = partial(self.__controller.set_awg_start_stop, awg),
-            val_mapping = create_on_off_val_mapping(on_val = "START" or True, off_val = "STOP" or False),
+            get_parser = BaspiLnhrdac2AWG.awg_enable_get_parser,
+            val_mapping = create_on_off_val_mapping(on_val = "START", off_val = "STOP"),
             initial_value = False
         )
+
+    #-------------------------------------------------
+
+    @staticmethod
+    def awg_enable_get_parser(val:bool) -> str:
+        """
+        Parsing method for the parameter "enable". Ensures correct function of val_mapping = create_on_off_val_mapping().
+        Output of enable.get() has to be a valid input of enable.set().
+        """
+        if val: return "START"
+        else: return "STOP"
 
     #-------------------------------------------------
         
@@ -209,6 +224,28 @@ class BaspiLnhrdac2AWG(InstrumentModule):
         while self.__controller.get_wav_memory_busy(awg):
             pass
 
+# class ----------------------------------------------------------------
+
+@dataclass
+class BaspiLnhrdac2SWGConfig():
+    """
+    Dataclass to pass a configuration of the LNHR DAC II SWG module.
+
+    Attributes: 
+    shape: "sine", "cosine, "triangle", "sawtooth", "ramp", "rectangle", "pulse", "fixed noise", "random noise" or "DC"
+    frequency: signal frequency in Hz (0.001 Hz - 10000 Hz)
+    amplitude: signal amplitude in V (+/- 10.000 V)
+    offset: signal DC-offset (+/- 10.000 V)
+    phase: signal phaseshift in ° (deg) (+/- 360.000°)
+    dutycycle: signal dutycycle in % (0.0 - 100.0), only applicable with shape "pulse"
+    """
+
+    shape: str = "sine"
+    frequency: float = 100.0
+    amplitude: float = 0.5
+    offset: float = 0.0
+    phase: float = 0.0
+    dutycycle: float = 0.0
 
 # class ----------------------------------------------------------------
 
@@ -246,16 +283,17 @@ class BaspiLnhrdac2SWG(InstrumentModule):
     
     #-------------------------------------------------
 
-    def __get_configuration(self) -> list:
+    def __get_configuration(self) -> BaspiLnhrdac2SWGConfig:
+        
         pass
 
     #-------------------------------------------------
 
-    def __set_configuration(self, user_config: dict) -> None:
+    def __set_configuration(self, config: BaspiLnhrdac2SWGConfig) -> None:
         """
         Create a waveform using the standard waveform generator. The resulting waveform is automatically written into the waveform memory.
 
-        user_config-Parameters:
+        config-Attributes:
         shape: "sine", "cosine, "triangle", "sawtooth", "ramp", "rectangle", "pulse", "fixed noise", "random noise" or "DC"
         frequency: signal frequency in Hz (0.001 Hz - 10000 Hz)
         amplitude: signal amplitude in V (+/- 10.000 V)
@@ -265,32 +303,14 @@ class BaspiLnhrdac2SWG(InstrumentModule):
 
         Parameters:
         awg: selected AWG
-        user_config: dictionary containing SWG configuration
-
+        config: object containing SWG configuration
         """
         
-        swg_config = {
-            "shape": "sine",
-            "frequency": 100.0,
-            "amplitude": 0.5,
-            "offset": 0.0,
-            "phase": 0.0,
-            "dutycycle": 50.0
-        }
-
-        # overwrite defaults if specified
-        for key in user_config.keys():
-            if key in swg_config.keys():
-                swg_config[key] = user_config[key]
-            else:
-                raise KeyError(f"Key '{key}' is invalid. Valid keys are: {list(swg_config.keys())}")
-
         self.__controller.set_swg_new(True)
 
         # always use "adapt clock" here, clock gets checked again in swg.apply
         self.__controller.set_swg_adapt_clock(True)
 
-        # specify waveform
         awg_shapes = {"sine": 0,
                       "cosine": 0,
                       "triangle": 1,
@@ -302,32 +322,36 @@ class BaspiLnhrdac2SWG(InstrumentModule):
                       "random noise": 6,
                       "DC": 7}
 
-        if swg_config["shape"] not in awg_shapes:
-            raise ValueError(f"Value '{swg_config["shape"]}' is invalid. Valid values are: {list(awg_shapes.keys())}.")
+        if config.shape not in awg_shapes:
+            raise ValueError(f"Value '{config.shape}' is invalid. Valid values are: {list(awg_shapes.keys())}.")
         
-        self.__controller.set_swg_shape(awg_shapes[swg_config["shape"]])
-        self.__controller.set_swg_desired_frequency(swg_config["frequency"])
-        self.__controller.set_swg_amplitude(swg_config["amplitude"])
-        self.__controller.set_swg_offset(swg_config["offset"])
+        # specify waveform
+        self.__controller.set_swg_shape(awg_shapes[config.shape])
+        self.__controller.set_swg_desired_frequency(config.frequency)
+        self.__controller.set_swg_amplitude(config.amplitude)
+        self.__controller.set_swg_offset(config.offset)
 
-        if swg_config["shape"] == "cosine":
-            self.__controller.set_swg_phase(swg_config["phase"] + 90.0)
+        if config.shape == "cosine":
+            self.__controller.set_swg_phase(config.phase + 90.0)
         else:
-            self.__controller.set_swg_phase(swg_config["phase"])
-        if swg_config["shape"] == "rectangle":
+            self.__controller.set_swg_phase(config.phase)
+        if config.shape == "rectangle":
             self.__controller.set_swg_dutycycle(50.0)
-        elif swg_config["shape"] == "pulse":
-            self.__controller.set_swg_dutycycle(swg_config["dutycycle"])
+        elif config.shape == "pulse":
+            self.__controller.set_swg_dutycycle(config.dutycycle)
 
-     #-------------------------------------------------
+    #-------------------------------------------------
 
-    def apply(self) -> None:
+    def apply(self, awg: str) -> None:
         """
         Apply the SWG configuration to an AWG waveform.
 
         Parameters:
         awg: selected AWG
         """
+
+        if awg.lower() == "a":
+            print("ok")
 
         awg = self.__controller.get_swg_wav_memory().lower()
 
@@ -351,7 +375,73 @@ class BaspiLnhrdac2SWG(InstrumentModule):
         self.__controller.write_wav_to_awg(awg)
         while self.__controller.get_wav_memory_busy(awg):
             pass
+
+
+# class ----------------------------------------------------------------
+
+@dataclass
+class BaspiLnhrdac2FastScan2dConfig():
+    """
+    Dataclass to pass a configuration of the LNHR DAC II Fast Scan 2D module.
+
+    Attributes:
+    
+    """
+
+    x_steps: int = 10,
+    x_start_voltage: float = 0.0,
+    x_stop_voltage: float = 1.0,
+    y_steps: int = 10,
+    y_start_voltage: float = 0.0,
+    y_stop_voltage: float = 1.0,
+    aqcuisition_delay: float = 0.0,
+    adaptive_shift: float = 0.0
+
   
+# class ----------------------------------------------------------------
+
+class BaspiLnhrdac2FastScan2d(InstrumentModule):
+
+    def __init__(self, 
+                 parent: VisaInstrument, 
+                 name: str, 
+                 controller: BaspiLnhrdac2Controller):
+        """
+        
+        """
+
+        super().__init__(parent, name)
+
+        self.__controller = controller
+
+        self.configuration = self.add_parameter(
+            name = "configuration",
+            get_cmd = None,
+            set_cmd = None
+        )
+
+        self.trigger = self.add_parameter(
+            name = "trigger",
+            get_cmd = None,
+            set_cmd = None
+        )
+
+        self.enable = self.add_parameter(
+            name = "enable",
+            get_cmd = None,
+            set_cmd = None
+        )    
+
+        #-------------------------------------------------
+
+        def __get_configuration(self) -> BaspiLnhrdac2FastScan2dConfig:
+            pass
+
+        #-------------------------------------------------
+
+        def __set_configuration(self, config: BaspiLnhrdac2FastScan2dConfig) -> None:
+            pass
+
 
 # class ----------------------------------------------------------------
 
@@ -418,6 +508,8 @@ class BaspiLnhrdac2(VisaInstrument):
         swg = BaspiLnhrdac2SWG(self, name, self.__controller)
         self.add_submodule(name, swg)
 
+        # create 2D scan Parameter
+
         # display some information after instanciation/ initial connection
         print("")
         self.connect_message()
@@ -456,55 +548,11 @@ class BaspiLnhrdac2(VisaInstrument):
 
 if __name__ == "__main__":
 
+    # a little example on how to use this driver
+
     station = Station()
     dac = BaspiLnhrdac2('LNHRDAC', 'TCPIP0::192.168.0.5::23::SOCKET')
     station.add_component(dac)
 
-    dac.ch1.enable.set("on")
-    dac.ch1.voltage.set(5.0)
-    print(dac.ch1.voltage.get())
-    dac.ch1.enable.set(False)
-    print(dac.ch1.enable.get())
 
-    dac.all.voltage.set(-3.86)
-    print(dac.all.voltage.get())
-
-    dac.ch17.enable.set(True)
-    dac.ch17.high_bandwidth.set(True)
-    print(dac.ch17.high_bandwidth.get())
-
-    dac.awga.channel.set(3)
-    print(dac.awga.channel.get())
-    dac.awgb.cycles.set(500)
-    print(dac.awgb.cycles.get())
-    dac.awgc.trigger.set("single step")
-    print(dac.awgc.trigger.get())
-
-    # wave = dac.awga.waveform.get()
-    # dac.awgb.waveform.set(wave)
-
-    # swg_config = {
-    #     "shape": "rectangle",
-    #     "frequency": 250,
-    #     "amplitude": 0.5,
-    #     }
-
-    # dac.awgd.swg.set(swg_config)
-    # print(dac.awgd.waveform.get())
-
-    print("---")
-
-    swg_config = {
-        "shape": "sine",
-        "frequency": 100,
-        "amplitude": 0.5,
-        }
-
-    dac.swg.configuration.set(swg_config)
-    dac.swg.awg.set("A")
-    dac.swg.apply()
-    print("check clock period now")
-    sleep(10)
-    dac.awgb.waveform.set([])
-    dac.swg.apply()
 
