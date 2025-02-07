@@ -130,7 +130,7 @@ class BaspiLnhrdac2AWG(InstrumentModule):
 
         self.waveform = self.add_parameter(
             name = "waveform",
-            # parameter_class = ParameterWithSetpoints,
+            parameter_class = ParameterWithSetpoints,
             get_cmd = partial(self.__get_awg_waveform, awg),
             set_cmd = partial(self.__set_awg_waveform, awg),
             initial_value = None
@@ -350,10 +350,8 @@ class BaspiLnhrdac2SWG(InstrumentModule):
         awg: selected AWG
         """
 
-        if awg.lower() == "a":
-            print("ok")
-
-        awg = self.__controller.get_swg_wav_memory().lower()
+        awg = awg.lower()
+        self.__controller.set_swg_wav_memory(awg)
 
         # decide on keep or adapt clock period
         other_awg = {"a": "b", "b": "a", "c": "d", "d": "c"}
