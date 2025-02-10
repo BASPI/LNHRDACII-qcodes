@@ -1,4 +1,9 @@
+# cache
 __pycache__
+
+# folders
 BasPI LNHR DAC demo
+
+# files
 restructuring_test.py
 restructuring_test_simplyfied.py
