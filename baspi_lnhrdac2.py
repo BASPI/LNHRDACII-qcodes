@@ -130,9 +130,10 @@ class BaspiLnhrdac2AWG(InstrumentModule):
 
         self.waveform = self.add_parameter(
             name = "waveform",
-            parameter_class = ParameterWithSetpoints,
+            # parameter_class = ParameterWithSetpoints,
             get_cmd = partial(self.__get_awg_waveform, awg),
             set_cmd = partial(self.__set_awg_waveform, awg),
+            # setpoints = None,
             initial_value = None
         )
 
@@ -152,6 +153,7 @@ class BaspiLnhrdac2AWG(InstrumentModule):
             val_mapping = create_on_off_val_mapping(on_val = "START", off_val = "STOP"),
             initial_value = False
         )
+        
 
     #-------------------------------------------------
 
