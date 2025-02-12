@@ -128,13 +128,21 @@ class BaspiLnhrdac2AWG(InstrumentModule):
             initial_value = 0
         )
 
+        self.waveform_setpoints = self.add_parameter(
+            name = "waveform_setpoints",
+            unit = "s",
+            get_cmd = partial(self.__get_awg_waveform_setpoints, awg),
+            vals = validate.Arrays(shape = (partial(self.__controller.get_awg_memory_size, awg),))        
+        )
+
         self.waveform = self.add_parameter(
             name = "waveform",
-            # parameter_class = ParameterWithSetpoints,
+            unit = "V",
+            parameter_class = ParameterWithSetpoints,
             get_cmd = partial(self.__get_awg_waveform, awg),
             set_cmd = partial(self.__set_awg_waveform, awg),
-            # setpoints = None,
-            initial_value = None
+            setpoints = (self.waveform_setpoints,),
+            vals = validate.Arrays(shape = (partial(self.__controller.get_awg_memory_size, awg),))
         )
 
         self.trigger = self.add_parameter(
@@ -225,6 +233,25 @@ class BaspiLnhrdac2AWG(InstrumentModule):
         self.__controller.write_wav_to_awg(awg)
         while self.__controller.get_wav_memory_busy(awg):
             pass
+
+    #-------------------------------------------------
+
+    def __get_awg_waveform_setpoints(self, awg: str) -> list[float]:
+        """
+        
+        """
+
+        board = {"a": "ab", "b": "ab", "c": "cd", "d": "cd"}
+        memory_size = self.__controller.get_wav_memory_size(awg)
+        clock_period = self.__controller.get_awg_clock_period(board[awg])
+
+        increment = clock_period / 1000000
+        setpoints = []
+        for element in range(0, memory_size):
+            setpoints.append(element*increment)
+
+        return setpoints
+    
 
 # class ----------------------------------------------------------------
 
