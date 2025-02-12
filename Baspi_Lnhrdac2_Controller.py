@@ -56,7 +56,6 @@ class BaspiLnhrdac2Controller():
         """
 
         x = round((float(vval) + 10.000000) * 838860.74)
-        log.info(x)
         return x
 
     #-------------------------------------------------
@@ -74,7 +73,6 @@ class BaspiLnhrdac2Controller():
         """
 
         x = round((int(dacval.strip(), 16) / 838860.74) - 10.000000, 6)
-        log.info(x)
         return x
 
     #-------------------------------------------------
@@ -134,10 +132,9 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
-
-        setchanneldavalue = self.write(f"{channel:0} {dacvalue:x}")
-        log.info(setchanneldavalue)
-        return setchanneldavalue
+        #x = round((int(dacvalue.strip(), 16) / 838860.74) - 10.000000, 6)
+        log.info(f"{channel} has the value {dacvalue}")
+        return self.write(f"{channel:0} {dacvalue:x}")
     
     #-------------------------------------------------
 
@@ -152,9 +149,8 @@ class BaspiLnhrdac2Controller():
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
 
-        setalldacvalue = self.write(f"all {dacvalue:x}")
-        log.info(setalldacvalue)
-        return setalldacvalue
+        log.info(f"all channels set to {dacvalue}")
+        return self.write(f"all {dacvalue:x}")
     
     #-------------------------------------------------
 
@@ -170,9 +166,9 @@ class BaspiLnhrdac2Controller():
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
 
-        setallstatus = self.write(f"all {status}")
-        log.info(setallstatus)
-        return setallstatus
+        setchannelstatus = self.write(f"{channel} {status}")
+        log.info(f"{channel}, {status}")
+        return setchannelstatus
 
     #-------------------------------------------------
 
@@ -186,6 +182,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
+        log.info(f"all channels set to {status}")
         
         return self.write(f"all {status}")
 
@@ -203,7 +200,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
-        
+        log.info(f"the bandwith of {channel} is {bandwidth}")
         return self.write(f"{channel} {bandwidth}")
 
     #-------------------------------------------------

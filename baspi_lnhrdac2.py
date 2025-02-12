@@ -493,6 +493,7 @@ class BaspiLnhrdac2(VisaInstrument):
             channel = channels[f"ch{channel_number}"]
             all_channels.append(channel)
             
+            
 
         self.add_submodule("all", all_channels)
 
