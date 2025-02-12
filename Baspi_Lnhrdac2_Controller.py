@@ -55,8 +55,7 @@ class BaspiLnhrdac2Controller():
         int: hexadecimal value, used internally by the DAC
         """
 
-        x = round((float(vval) + 10.000000) * 838860.74)
-        return x
+        return round((float(vval) + 10.000000) * 838860.74)
 
     #-------------------------------------------------
 
@@ -72,8 +71,7 @@ class BaspiLnhrdac2Controller():
         float: voltage value in V
         """
 
-        x = round((int(dacval.strip(), 16) / 838860.74) - 10.000000, 6)
-        return x
+        return round((int(dacval.strip(), 16) / 838860.74) - 10.000000, 6)
 
     #-------------------------------------------------
 
@@ -132,8 +130,8 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
-        #x = round((int(dacvalue.strip(), 16) / 838860.74) - 10.000000, 6)
-        log.info(f"{channel} has the value {dacvalue}")
+        x = round((dacvalue / 838860.74) - 10.000000, 6)
+        log.info(f"{channel} has the value {x} V")
         return self.write(f"{channel:0} {dacvalue:x}")
     
     #-------------------------------------------------
@@ -167,7 +165,7 @@ class BaspiLnhrdac2Controller():
         """
 
         setchannelstatus = self.write(f"{channel} {status}")
-        log.info(f"{channel}, {status}")
+        log.info(f"channel {channel} is {status}")
         return setchannelstatus
 
     #-------------------------------------------------
@@ -182,7 +180,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
-        log.info(f"all channels set to {status}")
+        log.info(f"all channels are {status}")
         
         return self.write(f"all {status}")
 
@@ -216,7 +214,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
-        
+        log.info(f"all channels are {bandwidth}")
         return self.write(f"all {bandwidth}")
     
     #-------------------------------------------------

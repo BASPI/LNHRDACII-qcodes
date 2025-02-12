@@ -476,16 +476,17 @@ class BaspiLnhrdac2(VisaInstrument):
         self.__number_channels = len(channel_modes)
         if self.__number_channels != 12 and self.__number_channels != 24:
             raise SystemError("Physically available number of channels is not 12 or 24. Please check device.")
+            log.warn("Physically available number of channels is not 12 or 24. Please check device.")
 
         # create channels and add to instrument
         # save references for later grouping
         channels = {}
         for channel_number in range(1, self.__number_channels + 1):
             name = f"ch{channel_number}"
+            log.info(f"added {name}")
             channel = BaspiLnhrdac2Channel(self, name, channel_number, self.__controller)
             channels.update({name: channel})
             self.add_submodule(name, channel)
-            log.info(f"added {name}")
 
         # grouping channels to simplify simoultaneous access
         all_channels = ChannelList(self, "all channels", BaspiLnhrdac2Channel)
