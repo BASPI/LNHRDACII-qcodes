@@ -488,6 +488,7 @@ class BaspiLnhrdac2(VisaInstrument):
             channels.update({name: channel})
             self.add_submodule(name, channel)
 
+
         # grouping channels to simplify simoultaneous access
         all_channels = ChannelList(self, "all channels", BaspiLnhrdac2Channel)
         for channel_number in range(1, self.__number_channels + 1):

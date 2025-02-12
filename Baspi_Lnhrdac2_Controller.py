@@ -131,7 +131,7 @@ class BaspiLnhrdac2Controller():
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
         x = round((dacvalue / 838860.74) - 10.000000, 6)
-        log.info(f"{channel} has the value {x} V")
+        log.info(f"{channel} is set to the value {x} V")
         return self.write(f"{channel:0} {dacvalue:x}")
     
     #-------------------------------------------------
@@ -165,7 +165,7 @@ class BaspiLnhrdac2Controller():
         """
 
         setchannelstatus = self.write(f"{channel} {status}")
-        log.info(f"channel {channel} is {status}")
+        log.info(f"channel {channel} is set {status}")
         return setchannelstatus
 
     #-------------------------------------------------
@@ -180,7 +180,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
-        log.info(f"all channels are {status}")
+        log.info(f"all channels are set {status}")
         
         return self.write(f"all {status}")
 
@@ -198,7 +198,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
-        log.info(f"the bandwith of {channel} is {bandwidth}")
+        log.info(f"the bandwith of {channel} is set to {bandwidth}")
         return self.write(f"{channel} {bandwidth}")
 
     #-------------------------------------------------
@@ -214,7 +214,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
-        log.info(f"all channels are {bandwidth}")
+        log.info(f"all channels are set to {bandwidth}")
         return self.write(f"all {bandwidth}")
     
     #-------------------------------------------------
@@ -239,7 +239,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
-
+        log.info(f"setting awg-{memory} to the address{address:x} and value{dacvalue:x}")
         return self.write(f"awg-{memory} {address:x} {dacvalue:x}")
 
     #-------------------------------------------------
@@ -255,7 +255,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
-
+        log.info(f"setting awg-{memory} to the value {dacvalue:x}")
         return self.write(f"awg-{memory} ALL {dacvalue:x}")
 
     #-------------------------------------------------
@@ -280,7 +280,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
-
+        log.info(f"setting swg-{memory} to the address{address:x} and value{voltage:.6f}")
         return self.write(f"wav-{memory} {address:x} {voltage:.6f}")
 
     #-------------------------------------------------
@@ -296,7 +296,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
-
+        log.info(f"setting swg-{memory} to the value {voltage:.6f}")
         return self.write(f"wav-{memory} all {voltage:.6f}")
     
     #-------------------------------------------------
@@ -328,7 +328,7 @@ class BaspiLnhrdac2Controller():
 
         for element in coefficients:
             coefficient_string = coefficient_string + f" {str(element)}"
-
+        log.info(f"set poly-{memory} to {coefficient_string}")
         return self.write(f"poly-{memory}{coefficient_string}")
     
     #-------------------------------------------------
@@ -351,7 +351,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: hexadecimal DAC value (0x0 - 0xFFFFFF)
         """
-
+        
         return self.write(f"{channel} v?")
 
     #-------------------------------------------------
@@ -736,7 +736,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
-
+        log.info(f"setting Update Mode of the {board}-board to {mode}")
         return self.write(f"C UM-{board} {mode}")
 
     #-------------------------------------------------
@@ -752,7 +752,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
-
+        log.info(f"setting Update Mode of the {board}-board to synchronous")
         return self.write(f"C SYNC-{board}")
 
     #-------------------------------------------------
@@ -776,6 +776,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
+        log.info(f"set RMP-{ramp} to mode {mode}")
 
         return self.write(f"C RMP-{ramp} {mode}")
 
@@ -792,7 +793,7 @@ class BaspiLnhrdac2Controller():
         string: ramp is idle ("0"), ramping up ("1"), ramping down ("2") 
             or on hold ("3")
         """
-        
+
         return self.write(f"C RMP-{ramp} S?")
 
     #-------------------------------------------------
@@ -904,7 +905,8 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
-        
+        log.info(f"set RMP-{ramp} for channel {channel}")
+
         return self.write(f"C RMP-{ramp} CH {channel}")
     
     #-------------------------------------------------
@@ -935,6 +937,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
+        log.info(f"set the starting voltage of RMP-{ramp} to {voltage} V")
 
         return self.write(f"C RMP-{ramp} STAV {voltage:.6f}")
 
@@ -968,7 +971,8 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
-
+        log.info(f"set the peak voltage/stop voltage of RMP-{ramp} to {voltage} V")
+        
         return self.write(f"C RMP-{ramp} STOV {voltage:.6f}")
     
     #-------------------------------------------------
@@ -1001,6 +1005,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
+        log.info(f"set the ramp time of RMP-{ramp} to {time} s")
 
         return self.write(f"C RMP-{ramp} RT {time:.3f}")
     
@@ -1034,6 +1039,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
+        log.info(f"set the ramp shape of RMP-{ramp} to {shape}")
 
         return self.write(f"C RMP-{ramp} RS {shape}")
 
@@ -1067,6 +1073,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
+        log.info(f"set the number of ramping cycles of RMP-{ramp} to {cycles}")
 
         return self.write(f"C RMP-{ramp} CS {cycles}")
 
@@ -1103,6 +1110,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
+        log.info(f"set the mode of RMP-{ramp} to {mode}")
 
         return self.write(f"C RMP-{ramp} STEP {mode}")
 
@@ -1148,6 +1156,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
+        log.info(f"set the starting mode of AWG-{awg} to {mode}")
 
         return self.write(f"C AWG-{awg} AS {mode}")
 
@@ -1188,6 +1197,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
+        log.info(f"set the reload mode of AWG-{awg} to {mode}")
 
         return self.write(f"C AWG-{awg} RLD {mode}")
 
@@ -1223,6 +1233,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
+        log.info(f"set the associated polynomial of AWG-{polynomial} to {mode}")
 
         return self.write(f"C AWG-{polynomial} AP {mode}")
     
@@ -1259,6 +1270,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
+        log.info(f"set the voltage shift of AWG-{awg} to {voltage} V")
 
         return self.write(f"C AWG-{awg} SHIV {voltage:.6f}")
 
@@ -1302,6 +1314,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
+        log.info(f"set AWG mode of AWG-{board} to {mode}") #maybe adapt this log if its not clear enough
 
         return self.write(f"C AWG-{board} ONLY {mode}")
 
@@ -1318,6 +1331,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
+        log.info(f"set the AWG-{awg} to {command}")
 
         return self.write(f"C AWG-{awg} {command}")
     
@@ -1409,6 +1423,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
+        log.info(f"select channel {channel} for the output for AWG-{awg}")
 
         return self.write(f"C AWG-{awg} CH {channel}")
     
@@ -1440,6 +1455,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
+        log.info(f"set the memory size to {size} for AWG-{awg}")
 
         return self.write(f"C AWG-{awg} MS {size}")
     
@@ -1473,6 +1489,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
+        log.info(f"set the number of cycles for AWG-{awg} to {cycles} cycles")
 
         return self.write(f"C AWG-{awg} CS {cycles}")
 
@@ -1512,6 +1529,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
+        log.info(f"set the external trigger mode of AWG-{awg} to {mode}")
 
         return self.write(f"C AWG-{awg} TM {mode}")
 
@@ -1546,6 +1564,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
+        log.info(f"set the AWG clock period of the Board {board} to {period} us ")
 
         return self.write(f"C AWG-{board} CP {period}")
     
@@ -1573,6 +1592,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
+        log.info(f"turn the 1MHz reference clock to {state}")
 
         return self.write(f"C AWG-1MHz {state}")
 
