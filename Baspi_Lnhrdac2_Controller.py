@@ -15,6 +15,10 @@
 from typing import Optional
 from time import sleep
 from qcodes.instrument import VisaInstrument
+import logging
+import qcodes.logger
+
+log = logging.getLogger(__name__)
         
 # class ----------------------------------------------------------------
 
@@ -51,7 +55,9 @@ class BaspiLnhrdac2Controller():
         int: hexadecimal value, used internally by the DAC
         """
 
-        return round((float(vval) + 10.000000) * 838860.74)
+        x = round((float(vval) + 10.000000) * 838860.74)
+        log.info(x)
+        return x
 
     #-------------------------------------------------
 
@@ -67,7 +73,9 @@ class BaspiLnhrdac2Controller():
         float: voltage value in V
         """
 
-        return round((int(dacval.strip(), 16) / 838860.74) - 10.000000, 6)
+        x = round((int(dacval.strip(), 16) / 838860.74) - 10.000000, 6)
+        log.info(x)
+        return x
 
     #-------------------------------------------------
 
@@ -127,7 +135,9 @@ class BaspiLnhrdac2Controller():
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
 
-        return self.write(f"{channel:0} {dacvalue:x}")
+        setchanneldavalue = self.write(f"{channel:0} {dacvalue:x}")
+        log.info(setchanneldavalue)
+        return setchanneldavalue
     
     #-------------------------------------------------
 
@@ -142,7 +152,9 @@ class BaspiLnhrdac2Controller():
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
 
-        return self.write(f"all {dacvalue:x}")
+        setalldacvalue = self.write(f"all {dacvalue:x}")
+        log.info(setalldacvalue)
+        return setalldacvalue
     
     #-------------------------------------------------
 
@@ -158,7 +170,9 @@ class BaspiLnhrdac2Controller():
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
 
-        return self.write(f"{channel} {status}")
+        setallstatus = self.write(f"all {status}")
+        log.info(setallstatus)
+        return setallstatus
 
     #-------------------------------------------------
 

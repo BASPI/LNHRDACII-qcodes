@@ -27,8 +27,10 @@ from warnings import warn
 # logging --------------------------------------------------------------
 
 import logging
+import qcodes.logger
 
 log = logging.getLogger(__name__)
+
 
 # class ----------------------------------------------------------------
 
@@ -483,12 +485,14 @@ class BaspiLnhrdac2(VisaInstrument):
             channel = BaspiLnhrdac2Channel(self, name, channel_number, self.__controller)
             channels.update({name: channel})
             self.add_submodule(name, channel)
+            log.info(f"added {name}")
 
         # grouping channels to simplify simoultaneous access
         all_channels = ChannelList(self, "all channels", BaspiLnhrdac2Channel)
         for channel_number in range(1, self.__number_channels + 1):
             channel = channels[f"ch{channel_number}"]
             all_channels.append(channel)
+            
 
         self.add_submodule("all", all_channels)
 
@@ -502,11 +506,13 @@ class BaspiLnhrdac2(VisaInstrument):
             name = f"awg{awg_designator}"
             awg = BaspiLnhrdac2AWG(self, name, awg_designator, self.__controller)
             self.add_submodule(name, awg)
+            log.info(f"created {name}")
 
         # create SWG parameter, only one is allowed
         name = "swg"
         swg = BaspiLnhrdac2SWG(self, name, self.__controller)
         self.add_submodule(name, swg)
+        log.info(f"{name} created")
 
         # create 2D scan Parameter
 
@@ -516,6 +522,8 @@ class BaspiLnhrdac2(VisaInstrument):
         print("All channels have been turned off (1 MOhm Pull-Down to AGND) upon initialization "
               + "and are pre-set to 0.0 V if turned on without setting a voltage beforehand.")
         print("")
+        self.log.info("All channels have been turned off (1 MOhm Pull-Down to AGND) upon initialization "
+              + "and are pre-set to 0.0 V if turned on without setting a voltage beforehand.")
 
     #-------------------------------------------------
 
