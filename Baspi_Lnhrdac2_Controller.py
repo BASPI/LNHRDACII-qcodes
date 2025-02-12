@@ -1630,6 +1630,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
+        log.info(f"set the mode for the SWG to {create_new}")
 
         return self.write(f"C SWG MODE {int(not create_new)}")
     
@@ -1662,6 +1663,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
+        log.info(f"set the shape for the SWG to {shape}")
 
         return self.write(f"C SWG WF {shape}")
    
@@ -1691,6 +1693,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
+        log.info(f"set the frequency of the SWG to {frequency} Hz")
          
         return self.write(f"C SWG DF {frequency}")
     
@@ -1724,6 +1727,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
+        log.info(f"set the state of the adaptive clock of the SWG to {adapt}")
 
         return self.write(f"C SWG ACLK {int(adapt)}")
     
@@ -1753,6 +1757,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
+        log.info(f"set the SWG amplitude to {amplitude}")
 
         return self.write(f"C SWG AMP {amplitude:.6f}")
     
@@ -1780,6 +1785,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
+        log.info(f"set the SWG DC offset to {offset} V")
 
         return self.write(f"C SWG DCV {offset:.6f}")
     
@@ -1809,6 +1815,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
+        log.info(f"set the phase shift of the SWG to {phase} degree")
 
         return self.write(f"C SWG PHA {phase:.4f}")
     
@@ -1838,6 +1845,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
+        log.info(f"set the dutycycle of the SWG to {dutycycle} %")
 
         return self.write(f"C SWG DUC {dutycycle:.3f}")
 
@@ -1925,6 +1933,7 @@ class BaspiLnhrdac2Controller():
         """
 
         parse = {"a": 0, "b": 1, "c": 2, "d": 3}
+        log.info(f"select the wave memory, in which the SWG will be saved in: saved in {wav}")
         return self.write(f"C SWG WMEM {parse[wav.lower()]}")
 
     #-------------------------------------------------
@@ -1964,6 +1973,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
+        log.info(f"wave form operation {operation} has been selected")
         return self.write(f"C SWG WFUN {operation}")
     
     #-------------------------------------------------
@@ -1994,6 +2004,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
+        log.info(f"set the linearization of the SWG to {apply}")
 
         return self.write(f"C SWG LIN {int(apply)}")
     
@@ -2006,7 +2017,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
-
+        log.info("SWG applied")
         return self.write("C SWG APPLY")
     
     #-------------------------------------------------
@@ -2045,6 +2056,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
+        log.info(f"content of the WAV-{wav} has been cleared")
 
         return self.write(f"C WAV-{wav} CLR")
 
@@ -2061,6 +2073,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
+        log.info(f"content of the WAV-{wav} has been saved")
 
         return self.write(f"C WAV-{wav} SAVE")
 
@@ -2095,6 +2108,7 @@ class BaspiLnhrdac2Controller():
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
         """
+        log.info(f"content of the WAV-{wav_awg} has been written")
 
         return self.write(f"C WAV-{wav_awg} WRITE")
     
