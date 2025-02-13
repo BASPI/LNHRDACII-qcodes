@@ -114,12 +114,16 @@ class BaspiLnhrdac2AWG(InstrumentModule):
 
         self.__controller = controller
 
+        if awg.lower() == "a" or awg.lower() == "b":
+            board = "ab"
+        elif awg.lower() == "c" or awg.lower() == "d":
+            board = "cd"
+
         self.channel = self.add_parameter(
             name = "channel",
             get_cmd = partial(self.__controller.get_awg_channel, awg),
             set_cmd = partial(self.__controller.set_awg_channel, awg),
-            vals = validate.Ints(min_value=1, max_value=24),
-            initial_value = None
+            vals = validate.Ints(min_value=1, max_value=24)
         )
 
         self.cycles = self.add_parameter(
@@ -128,6 +132,16 @@ class BaspiLnhrdac2AWG(InstrumentModule):
             set_cmd = partial(self.__controller.set_awg_cycles, awg),
             vals = validate.Ints(min_value=0, max_value=4000000000),
             initial_value = 0
+        )
+
+        self.sampling_rate = self.add_parameter(
+            name = "sampling_rate",
+            unit = "s",
+            get_cmd = partial(self.__controller.get_awg_clock_period, board),
+            set_cmd = partial(self.__controller.set_awg_clock_period, board),
+            get_parser = self.__awg_sampling_rate_get_parser,
+            set_parser = self.__awg_sampling_rate_set_parser,
+            vals = validate.Numbers(min_value = 0.00001, max_value = 4000.0)
         )
 
         self.waveform_setpoints = self.add_parameter(
@@ -162,22 +176,45 @@ class BaspiLnhrdac2AWG(InstrumentModule):
             name = "enable",
             get_cmd = partial(self.__controller.get_awg_run_state, awg),
             set_cmd = partial(self.__controller.set_awg_start_stop, awg),
-            get_parser = BaspiLnhrdac2AWG.awg_enable_get_parser,
+            get_parser = BaspiLnhrdac2AWG.__awg_enable_get_parser,
             val_mapping = create_on_off_val_mapping(on_val = "START", off_val = "STOP"),
             initial_value = False
         )
 
+        board = None
+
     #-------------------------------------------------
 
     @staticmethod
-    def awg_enable_get_parser(val:bool) -> str:
+    def __awg_enable_get_parser(val: bool) -> str:
         """
         Parsing method for the parameter "enable". Ensures correct function of val_mapping = create_on_off_val_mapping().
         Output of enable.get() has to be a valid input of enable.set().
         """
+
         if val: return "START"
         else: return "STOP"
 
+    #-------------------------------------------------
+
+    @staticmethod
+    def __awg_sampling_rate_get_parser(val: int) -> float:
+        """
+        
+        """
+
+        return round(val / 1000000, 6)
+    
+    #-------------------------------------------------
+
+    @staticmethod
+    def __awg_sampling_rate_set_parser(val: float) -> int:
+        """
+        
+        """
+        
+        print("Manually setting the sampling rate of an AWG might influence other AWGs, due to shared sampling rates of AWG A and B aswell as AWG C and D.")
+        return int(val * 1000000)
     #-------------------------------------------------
         
     def __get_awg_waveform(self, awg: str) -> list[float]:
@@ -301,12 +338,6 @@ class BaspiLnhrdac2SWG(InstrumentModule):
         super().__init__(parent, name)
 
         self.__controller = controller
-
-        self.awg = self.add_parameter(
-            name = "awg",
-            get_cmd = self.__controller.get_swg_wav_memory,
-            set_cmd = self.__controller.set_swg_wav_memory
-        )
 
         self.configuration = self.add_parameter(
             name = "configuration",
