@@ -19,6 +19,7 @@ from qcodes.instrument import VisaInstrument, InstrumentChannel, ChannelList, In
 from qcodes.parameters import ParameterWithSetpoints, create_on_off_val_mapping
 import qcodes.validators as validate
 
+from numpy import array
 from functools import partial
 from dataclasses import dataclass
 from time import sleep
@@ -99,7 +100,7 @@ class BaspiLnhrdac2AWG(InstrumentModule):
         awg_channel: channel/output the AWG gets routed to
         awg_cycles: number of cycles/repetitions the device outputs before stopping
         swg: Standard Waveform Generator used to quickly create simple signals
-        waveform: holds the values that will be outputted by the AWG
+        waveform: holds the values that will be outputted by the AWG using numpy arrays
         trigger: AWG trigger mode
 
         Parameters:
@@ -132,7 +133,8 @@ class BaspiLnhrdac2AWG(InstrumentModule):
             name = "waveform_setpoints",
             unit = "s",
             get_cmd = partial(self.__get_awg_waveform_setpoints, awg),
-            vals = validate.Arrays(shape = (partial(self.__controller.get_awg_memory_size, awg),))        
+            get_parser = partial(array, dtype = float),
+            vals = validate.Arrays(shape = (self.__controller.get_wav_memory_size(awg),))        
         )
 
         self.waveform = self.add_parameter(
@@ -141,8 +143,9 @@ class BaspiLnhrdac2AWG(InstrumentModule):
             parameter_class = ParameterWithSetpoints,
             get_cmd = partial(self.__get_awg_waveform, awg),
             set_cmd = partial(self.__set_awg_waveform, awg),
+            get_parser = partial(array, dtype = float),
             setpoints = (self.waveform_setpoints,),
-            vals = validate.Arrays(shape = (partial(self.__controller.get_awg_memory_size, awg),))
+            vals = validate.Arrays(shape = (self.__controller.get_wav_memory_size(awg),))
         )
 
         self.trigger = self.add_parameter(
@@ -247,8 +250,8 @@ class BaspiLnhrdac2AWG(InstrumentModule):
 
         increment = clock_period / 1000000
         setpoints = []
-        for element in range(0, memory_size):
-            setpoints.append(element*increment)
+        for index in range(0, memory_size):
+            setpoints.append(round(index*increment,6))
 
         return setpoints
     
