@@ -144,6 +144,7 @@ class BaspiLnhrdac2AWG(InstrumentModule):
             get_cmd = partial(self.__get_awg_waveform, awg),
             set_cmd = partial(self.__set_awg_waveform, awg),
             get_parser = partial(array, dtype = float),
+            set_parser = list,
             setpoints = (self.waveform_setpoints,),
             vals = validate.Arrays(shape = (self.__controller.get_wav_memory_size(awg),))
         )
