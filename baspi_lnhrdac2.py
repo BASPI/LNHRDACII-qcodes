@@ -110,8 +110,8 @@ class BaspiLnhrdac2AWG(InstrumentModule):
         awg: AWG designator
         controller: the controller the instrument uses for its communication
         """
-        super().__init__(parent, name)
 
+        super().__init__(parent, name)
         self.__controller = controller
 
         if awg.lower() == "a" or awg.lower() == "b":
@@ -121,15 +121,15 @@ class BaspiLnhrdac2AWG(InstrumentModule):
 
         self.channel = self.add_parameter(
             name = "channel",
-            get_cmd = partial(self.__controller.get_awg_channel, awg),
-            set_cmd = partial(self.__controller.set_awg_channel, awg),
+            get_cmd = partial(controller.get_awg_channel, awg),
+            set_cmd = partial(controller.set_awg_channel, awg),
             vals = validate.Ints(min_value=1, max_value=24)
         )
 
         self.cycles = self.add_parameter(
             name = "cycles",
-            get_cmd = partial(self.__controller.get_awg_cycles, awg),
-            set_cmd = partial(self.__controller.set_awg_cycles, awg),
+            get_cmd = partial(controller.get_awg_cycles, awg),
+            set_cmd = partial(controller.set_awg_cycles, awg),
             vals = validate.Ints(min_value=0, max_value=4000000000),
             initial_value = 0
         )
@@ -137,10 +137,10 @@ class BaspiLnhrdac2AWG(InstrumentModule):
         self.sampling_rate = self.add_parameter(
             name = "sampling_rate",
             unit = "s",
-            get_cmd = partial(self.__controller.get_awg_clock_period, board),
-            set_cmd = partial(self.__controller.set_awg_clock_period, board),
-            get_parser = self.__awg_sampling_rate_get_parser,
-            set_parser = self.__awg_sampling_rate_set_parser,
+            get_cmd = partial(controller.get_awg_clock_period, board),
+            set_cmd = partial(controller.set_awg_clock_period, board),
+            get_parser = self.__get_parser_awg_sampling_rate,
+            set_parser = self.__set_parser_awg_sampling_rate,
             vals = validate.Numbers(min_value = 0.00001, max_value = 4000.0)
         )
 
@@ -149,7 +149,7 @@ class BaspiLnhrdac2AWG(InstrumentModule):
             unit = "s",
             get_cmd = partial(self.__get_awg_waveform_setpoints, awg),
             get_parser = partial(array, dtype = float),
-            vals = validate.Arrays(shape = (self.__controller.get_wav_memory_size(awg),))        
+            vals = validate.Arrays(shape = (controller.get_wav_memory_size(awg),))        
         )
 
         self.waveform = self.add_parameter(
@@ -161,22 +161,22 @@ class BaspiLnhrdac2AWG(InstrumentModule):
             get_parser = partial(array, dtype = float),
             set_parser = list,
             setpoints = (self.waveform_setpoints,),
-            vals = validate.Arrays(shape = (self.__controller.get_wav_memory_size(awg),))
+            vals = validate.Arrays(shape = (controller.get_wav_memory_size(awg),))
         )
 
         self.trigger = self.add_parameter(
             name = "trigger",
-            get_cmd = partial(self.__controller.get_awg_trigger_mode, awg),
-            set_cmd = partial(self.__controller.set_awg_trigger_mode, awg),
+            get_cmd = partial(controller.get_awg_trigger_mode, awg),
+            set_cmd = partial(controller.set_awg_trigger_mode, awg),
             val_mapping = {"disable": 0, "start only": 1, "start stop": 2, "single step": 3},
             initial_value = "disable"
         )
 
         self.enable = self.add_parameter(
             name = "enable",
-            get_cmd = partial(self.__controller.get_awg_run_state, awg),
-            set_cmd = partial(self.__controller.set_awg_start_stop, awg),
-            get_parser = BaspiLnhrdac2AWG.__awg_enable_get_parser,
+            get_cmd = partial(controller.get_awg_run_state, awg),
+            set_cmd = partial(controller.set_awg_start_stop, awg),
+            get_parser = BaspiLnhrdac2AWG.__get_parser_awg_enable,
             val_mapping = create_on_off_val_mapping(on_val = "START", off_val = "STOP"),
             initial_value = False
         )
@@ -186,19 +186,7 @@ class BaspiLnhrdac2AWG(InstrumentModule):
     #-------------------------------------------------
 
     @staticmethod
-    def __awg_enable_get_parser(val: bool) -> str:
-        """
-        Parsing method for the parameter "enable". Ensures correct function of val_mapping = create_on_off_val_mapping().
-        Output of enable.get() has to be a valid input of enable.set().
-        """
-
-        if val: return "START"
-        else: return "STOP"
-
-    #-------------------------------------------------
-
-    @staticmethod
-    def __awg_sampling_rate_get_parser(val: int) -> float:
+    def __get_parser_awg_sampling_rate(val: int) -> float:
         """
         
         """
@@ -208,13 +196,31 @@ class BaspiLnhrdac2AWG(InstrumentModule):
     #-------------------------------------------------
 
     @staticmethod
-    def __awg_sampling_rate_set_parser(val: float) -> int:
+    def __set_parser_awg_sampling_rate(val: float) -> int:
         """
         
         """
         
         print("Manually setting the sampling rate of an AWG might influence other AWGs, due to shared sampling rates of AWG A and B aswell as AWG C and D.")
         return int(val * 1000000)
+    
+    #-------------------------------------------------
+
+    def __get_awg_waveform_setpoints(self, awg: str) -> list[float]:
+        """
+        
+        """
+
+        board = {"a": "ab", "b": "ab", "c": "cd", "d": "cd"}
+        memory_size = self.__controller.get_wav_memory_size(awg)
+        clock_period = self.__controller.get_awg_clock_period(board[awg])
+
+        increment = clock_period / 1000000
+        setpoints = []
+        for index in range(0, memory_size):
+            setpoints.append(round(index*increment,6))
+
+        return setpoints
     #-------------------------------------------------
         
     def __get_awg_waveform(self, awg: str) -> list[float]:
@@ -274,24 +280,18 @@ class BaspiLnhrdac2AWG(InstrumentModule):
         self.__controller.write_wav_to_awg(awg)
         while self.__controller.get_wav_memory_busy(awg):
             pass
-
+    
     #-------------------------------------------------
 
-    def __get_awg_waveform_setpoints(self, awg: str) -> list[float]:
+    @staticmethod
+    def __get_parser_awg_enable(val: bool) -> str:
         """
-        
+        Parsing method for the parameter "enable". Ensures correct function of val_mapping = create_on_off_val_mapping().
+        Output of enable.get() has to be a valid input of enable.set().
         """
 
-        board = {"a": "ab", "b": "ab", "c": "cd", "d": "cd"}
-        memory_size = self.__controller.get_wav_memory_size(awg)
-        clock_period = self.__controller.get_awg_clock_period(board[awg])
-
-        increment = clock_period / 1000000
-        setpoints = []
-        for index in range(0, memory_size):
-            setpoints.append(round(index*increment,6))
-
-        return setpoints
+        if val: return "START"
+        else: return "STOP"
     
 
 # class ----------------------------------------------------------------
@@ -336,7 +336,6 @@ class BaspiLnhrdac2SWG(InstrumentModule):
         """
 
         super().__init__(parent, name)
-
         self.__controller = controller
 
         self.configuration = self.add_parameter(
@@ -442,7 +441,7 @@ class BaspiLnhrdac2SWG(InstrumentModule):
 # class ----------------------------------------------------------------
 
 @dataclass
-class BaspiLnhrdac2FastScan2dConfig():
+class BaspiLnhrdac2Fast2dConfig():
     """
     Dataclass to pass a configuration of the LNHR DAC II Fast Scan 2D module.
 
@@ -450,19 +449,20 @@ class BaspiLnhrdac2FastScan2dConfig():
     
     """
 
-    x_steps: int = 10,
+    x_channel: int = 1,
     x_start_voltage: float = 0.0,
     x_stop_voltage: float = 1.0,
-    y_steps: int = 10,
+    x_steps: int = 10,
+    y_channel: int = 2,
     y_start_voltage: float = 0.0,
     y_stop_voltage: float = 1.0,
+    y_steps: int = 10,
     aqcuisition_delay: float = 0.0,
     adaptive_shift: float = 0.0
-
   
 # class ----------------------------------------------------------------
 
-class BaspiLnhrdac2FastScan2d(InstrumentModule):
+class BaspiLnhrdac2Fast2d(InstrumentModule):
 
     def __init__(self, 
                  parent: VisaInstrument, 
@@ -473,7 +473,6 @@ class BaspiLnhrdac2FastScan2d(InstrumentModule):
         """
 
         super().__init__(parent, name)
-
         self.__controller = controller
 
         self.configuration = self.add_parameter(
@@ -488,6 +487,24 @@ class BaspiLnhrdac2FastScan2d(InstrumentModule):
             set_cmd = None
         )
 
+        self.x_axis = self.add_parameter(
+            name = "x_axis",
+            unit = "V",
+            get_cmd = None,
+            set_cmd = None,
+            vals = None
+        )
+
+        self.y_axis = self.add_parameter(
+            name = "y_axis",
+            unit = "V",
+            parameter_class = ParameterWithSetpoints,
+            get_cmd = None,
+            set_cmd = None,
+            setpoints = (self.x_axis,),
+            vals = None
+        )
+
         self.enable = self.add_parameter(
             name = "enable",
             get_cmd = None,
@@ -496,12 +513,36 @@ class BaspiLnhrdac2FastScan2d(InstrumentModule):
 
         #-------------------------------------------------
 
-        def __get_configuration(self) -> BaspiLnhrdac2FastScan2dConfig:
+        def __get_2d_configuration(self) -> BaspiLnhrdac2Fast2dConfig:
             pass
 
         #-------------------------------------------------
 
-        def __set_configuration(self, config: BaspiLnhrdac2FastScan2dConfig) -> None:
+        def __set_2d_configuration(self, config: BaspiLnhrdac2Fast2dConfig) -> None:
+            """
+            
+            """
+
+
+
+        #-------------------------------------------------
+
+        def __get_2d_trigger(self):
+            pass
+
+        #-------------------------------------------------
+
+        def __set_2d_trigger():
+            pass
+
+        #-------------------------------------------------
+
+        def __get_2d_x_axis():
+            pass
+
+        #-------------------------------------------------
+
+        def __get_2d_x_axis():
             pass
 
 
@@ -570,7 +611,10 @@ class BaspiLnhrdac2(VisaInstrument):
         swg = BaspiLnhrdac2SWG(self, name, self.__controller)
         self.add_submodule(name, swg)
 
-        # create 2D scan Parameter
+        # create 2D scan Parameter, only one is allowed
+        name = "fast2d"
+        fast2d = BaspiLnhrdac2Fast2d(self, name, self.__controller)
+        self.add_submodule(name, fast2d)
 
         # display some information after instanciation/ initial connection
         print("")
