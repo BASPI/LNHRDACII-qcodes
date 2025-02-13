@@ -101,7 +101,8 @@ class BaspiLnhrdac2AWG(InstrumentModule):
         awg_cycles: number of cycles/repetitions the device outputs before stopping
         swg: Standard Waveform Generator used to quickly create simple signals
         waveform: holds the values that will be outputted by the AWG using numpy arrays
-        trigger: AWG trigger mode
+        waveform_setpoints: holds the time-axis values of the waveform parameter using numpy arrays
+        trigger: AWG external trigger mode
 
         Parameters:
         parent: instrument this channel is a part of
@@ -165,7 +166,6 @@ class BaspiLnhrdac2AWG(InstrumentModule):
             val_mapping = create_on_off_val_mapping(on_val = "START", off_val = "STOP"),
             initial_value = False
         )
-        
 
     #-------------------------------------------------
 
