@@ -68,6 +68,7 @@ class BaspiLnhrdac2Channel(InstrumentChannel):
             vals = validate.Numbers(min_value = -10.0, max_value = 10.0),
             initial_value = 0.0
         )
+        
 
         self.high_bandwidth = self.add_parameter(
             name = "high_bandwidth",
@@ -225,8 +226,10 @@ class BaspiLnhrdac2AWG(InstrumentModule):
             raise MemoryError("Error occured while writing to the devices memory.")
         
         self.__controller.write_wav_to_awg(awg)
+        log.info(f"The AWG-{awg} has been written")
         while self.__controller.get_wav_memory_busy(awg):
             pass
+        log.info(f"The AWG-{awg} has been written")
 
 # class ----------------------------------------------------------------
 
@@ -310,7 +313,8 @@ class BaspiLnhrdac2SWG(InstrumentModule):
         config: object containing SWG configuration
         """
         
-        self.__controller.set_swg_new(True)
+        x = self.__controller.set_swg_new(True)
+        log.info(f"set the mode for the SWG to {x}")
 
         # always use "adapt clock" here, clock gets checked again in swg.apply
         self.__controller.set_swg_adapt_clock(True)
@@ -343,6 +347,9 @@ class BaspiLnhrdac2SWG(InstrumentModule):
             self.__controller.set_swg_dutycycle(50.0)
         elif config.shape == "pulse":
             self.__controller.set_swg_dutycycle(config.dutycycle)
+        
+        #here logging for the configuration for consistency
+        log.info(config)
 
     #-------------------------------------------------
 
@@ -361,9 +368,10 @@ class BaspiLnhrdac2SWG(InstrumentModule):
         other_awg = {"a": "b", "b": "a", "c": "d", "d": "c"}
         other_awg_size = self.__controller.get_awg_memory_size(other_awg[awg])
         if other_awg_size > 2:
-            self.__controller.set_swg_adapt_clock(False)
+            x = self.__controller.set_swg_adapt_clock(False)
+            
         else:
-            self.__controller.set_swg_adapt_clock(True)
+            x = self.__controller.set_swg_adapt_clock(True)
 
         desired_frequency = self.__controller.get_swg_desired_frequency()
         nearest_frequency = self.__controller.get_swg_nearest_frequency()
@@ -377,6 +385,8 @@ class BaspiLnhrdac2SWG(InstrumentModule):
         self.__controller.write_wav_to_awg(awg)
         while self.__controller.get_wav_memory_busy(awg):
             pass
+
+        log.info(f"applied following configs to the awg: awg-{awg}, adapt clock: {x}, desired frequency and nearest frequency : {desired_frequency}, {nearest_frequency}")
 
 
 # class ----------------------------------------------------------------
