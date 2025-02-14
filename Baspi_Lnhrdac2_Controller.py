@@ -1919,7 +1919,7 @@ class BaspiLnhrdac2Controller():
 
     #-------------------------------------------------
 
-    def set_swg_select_operation(self, operation: int) -> str:
+    def set_swg_selected_operation(self, operation: int) -> str:
         """
         Select the wave memory operation that will be applied with the command 
         "Apply to wave memory now" (apply_swg_operation())
