@@ -457,7 +457,7 @@ class BaspiLnhrdac2Fast2dConfig():
     y_start_voltage: float = 0.0,
     y_stop_voltage: float = 1.0,
     y_steps: int = 10,
-    aqcuisition_delay: float = 0.0,
+    acquisition_delay: float = 0.0,
     adaptive_shift: float = 0.0
   
 # class ----------------------------------------------------------------
@@ -511,39 +511,112 @@ class BaspiLnhrdac2Fast2d(InstrumentModule):
             set_cmd = None
         )    
 
-        #-------------------------------------------------
+    #-------------------------------------------------
 
-        def __get_2d_configuration(self) -> BaspiLnhrdac2Fast2dConfig:
-            pass
+    def __get_2d_configuration(self) -> BaspiLnhrdac2Fast2dConfig:
+        pass
 
-        #-------------------------------------------------
+    #-------------------------------------------------
 
-        def __set_2d_configuration(self, config: BaspiLnhrdac2Fast2dConfig) -> None:
-            """
+    def __set_2d_configuration(self, config: BaspiLnhrdac2Fast2dConfig) -> None:
+        """
+        
+        """
+
+        # choose AWG, ramp and channels
+        try:
+            if not self.__controller.get_awg_run_state("a") and self.__controller.get_ramp_state("a") == 0:
+                awg_ramp = "a"
+            elif not self.__controller.get_awg_run_state("b") and self.__controller.get_ramp_state("b") == 0:
+                awg_ramp = "b"
+            elif not self.__controller.get_awg_run_state("c") and self.__controller.get_ramp_state("c") == 0:
+                awg_ramp = "c"
+            elif not self.__controller.get_awg_run_state("d") and self.__controller.get_ramp_state("d") == 0:
+                awg_ramp = "d"
+            else:
+                raise SystemError
+        except (KeyError, SystemError):
+            raise SystemError("There are not enough AWG resources available. Try again after stopping currently running AWGs and ramp generators.")
+        
+        self.__controller.set_awg_channel(awg_ramp, config.y_channel)
+        if not self.__controller.get_awg_channel_availability(awg_ramp):
+            raise SystemError(f"The chosen y-axis output (channel {config.y_channel}) is not available.")
+        
+        self.__controller.set_ramp_channel(awg_ramp, config.x_channel)
+        if not self.__controller.get_ramp_channel_availability(awg_ramp):
+            raise SystemError(f"The chosen x-axis output (channel {config.y_channel}) is not available.")
+        
+        memory = {"a": 0, "b": 1, "c": 2, "d": 0}
+        board ={"a": "ab", "b": "ab", "c": "cd", "d": "cd"}
+
+        # set up x-axis
+        self.__controller.set_ramp_starting_voltage(awg_ramp, config.x_start_voltage)
+        self.__controller.set_ramp_peak_voltage(awg_ramp, config.x_stop_voltage)
+        ramp_time = 0.005 * (config.x_steps + 1)
+        self.__controller.set_ramp_duration(awg_ramp, ramp_time)
+        self.__controller.set_ramp_shape(awg_ramp, 0)
+        self.__controller.set_ramp_cycles(awg_ramp, 1)
+        self.__controller.select_ramp_step(awg_ramp, 1)
+
+        # set up y-axis
+        clock_period = int(config.acquisition_delay * 1000)
+        period = config.y_steps * (0.000001 * clock_period)
+        frequency = 1.0 / period
+        amplitude = config.y_stop_voltage - config.y_start_voltage
+        offset = config.y_start_voltage
+
+        if period < 0.006:
+            raise SystemError(f"The configured y-axis sweep is too short ({period} s). Increase number of steps or acquisition delay. Minimal sweep time is 0.006 s.")
+        
+        self.__controller.set_awg_cycles(awg_ramp, 1)
+        self.__controller.set_awg_trigger_mode(awg_ramp, 0)
+
+        if self.__controller.get_awg_clock_period(board[awg_ramp]) != clock_period: 
+            try:
+                self.__controller.set_awg_clock_period(board[awg_ramp], clock_period)
+                print(f"Clock period of AWG {board[awg_ramp][0].upper()} and {board[awg_ramp][1].upper()} has been changed to {clock_period}.")
+            except KeyError: 
+                raise SystemError(f"Clock period of AWG {board[awg_ramp][0].upper()} and {board[awg_ramp][1].upper()} cannot be changed. Try again after stopping currently running AWGs.")
             
-            """
+        self.__controller.set_swg_adapt_clock(False)
+        self.__controller.set_swg_new(True)
+        self.__controller.set_swg_shape(3)
+        self.__controller.set_swg_desired_frequency(frequency)
+        self.__controller.set_swg_amplitude(amplitude)
+        self.__controller.set_swg_offset(offset)
+        self.__controller.set_swg_phase(0)
+        self.__controller.set_swg_wav_memory(memory)
+        self.__controller.set_swg_selected_operation(2)
+        
+        if self.__controller.get_wav_memory_size(awg_ramp) > 0:
+            print(f"Memory of AWG {awg_ramp.upper()} is not empty and will b e overwritten.")
 
+        self.__controller.clear_wav_memory(awg_ramp)
+        self.__controller.apply_swg_operation()
+        last_mem_adr = int(self.__controller.get_wav_memory_size(awg_ramp))
+        self.__controller.set_wav_memory_value(memory[awg_ramp], last_mem_adr, config.y_start_voltage)
+        self.__controller.write_wav_to_awg(awg_ramp)
+        
+            # adaptive shift
+    #-------------------------------------------------
 
+    def __get_2d_trigger(self):
+        pass
 
-        #-------------------------------------------------
+    #-------------------------------------------------
 
-        def __get_2d_trigger(self):
-            pass
+    def __set_2d_trigger():
+        pass
 
-        #-------------------------------------------------
+    #-------------------------------------------------
 
-        def __set_2d_trigger():
-            pass
+    def __get_2d_x_axis():
+        pass
 
-        #-------------------------------------------------
+    #-------------------------------------------------
 
-        def __get_2d_x_axis():
-            pass
-
-        #-------------------------------------------------
-
-        def __get_2d_x_axis():
-            pass
+    def __get_2d_x_axis():
+        pass
 
 
 # class ----------------------------------------------------------------

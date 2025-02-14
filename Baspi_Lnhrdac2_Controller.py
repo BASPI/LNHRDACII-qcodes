@@ -772,7 +772,7 @@ class BaspiLnhrdac2Controller():
 
     #-------------------------------------------------
 
-    def get_ramp_state(self, ramp: str) -> str:
+    def get_ramp_state(self, ramp: str) -> int:
         """
         Read the state of a ramp/step generator
 
@@ -780,15 +780,15 @@ class BaspiLnhrdac2Controller():
         ramp: ramp/step generator ("A", "B", "C" or "D")
 
         Returns:
-        string: ramp is idle ("0"), ramping up ("1"), ramping down ("2") 
-            or on hold ("3")
+        int: ramp is idle (0), ramping up (1), ramping down (2) 
+            or on hold (3)
         """
         
-        return self.write(f"C RMP-{ramp} S?")
+        return int(self.write(f"C RMP-{ramp} S?"))
 
     #-------------------------------------------------
 
-    def get_ramp_cycles_done(self, ramp: str) -> str:
+    def get_ramp_cycles_done(self, ramp: str) -> int:
         """
         Read the number of cycles that have been completed by a 
         ramp/step generator. This value is internally reset on each 
@@ -798,14 +798,14 @@ class BaspiLnhrdac2Controller():
         ramp: ramp/step generator ("A", "B", "C" or "D")
 
         Returns:
-        string: completed ramp/step cycles (0 - 4000000000)
+        int: completed ramp/step cycles (0 - 4000000000)
         """
 
-        return self.write(f"C RMP-{ramp} CD?")
+        return int(self.write(f"C RMP-{ramp} CD?"))
 
     #-------------------------------------------------
 
-    def get_ramp_steps_done(self, ramp: str) -> str:
+    def get_ramp_steps_done(self, ramp: str) -> int:
         """
         Read the number of single steps that have been completed by a 
         ramp/step generator. This value is internally reset on each 
@@ -815,14 +815,14 @@ class BaspiLnhrdac2Controller():
         ramp: ramp/step generator ("A", "B", "C" or "D")
 
         Returns:
-        string: completed ramp/step steps (0 - 4000000000)
+        int: completed ramp/step steps (0 - 4000000000)
         """
 
-        return self.write(f"C RMP-{ramp} SD?")
+        return int(self.write(f"C RMP-{ramp} SD?"))
 
     #-------------------------------------------------
 
-    def get_ramp_step_size(self, ramp: str) -> str:
+    def get_ramp_step_size(self, ramp: str) -> float:
         """
         Read the internally calculated step size in Volts
 
@@ -830,14 +830,14 @@ class BaspiLnhrdac2Controller():
         ramp: ramp/step generator ("A", "B", "C" or "D")
 
         Returns:
-        string: step size in V/step (+/- 10.000000 V)
+        float: step size in V/step (+/- 10.000000 V)
         """
 
-        return self.write(f"C RMP-{ramp} SSV?")
+        return round(float(self.write(f"C RMP-{ramp} SSV?")), 6)
 
     #-------------------------------------------------
 
-    def get_ramp_cycle_steps(self, ramp: str) -> str:
+    def get_ramp_cycle_steps(self, ramp: str) -> int:
         """
         Read the internally calculated steps per ramp cycle
 
@@ -845,14 +845,14 @@ class BaspiLnhrdac2Controller():
         ramp: ramp/step generator ("A", "B", "C" or "D")
 
         Returns:
-        string: number of steps per cycle (0 - 200000000)
+        int: number of steps per cycle (0 - 200000000)
         """
 
-        return self.write(f"C RMP-{ramp} ST?")
+        return int(self.write(f"C RMP-{ramp} ST?"))
 
     #-------------------------------------------------
 
-    def get_ramp_channel_availability(self, ramp: str) -> str:
+    def get_ramp_channel_availability(self, ramp: str) -> bool:
         """
         Read if the associated DAC channel of a ramp/step generator is 
         available
@@ -861,15 +861,15 @@ class BaspiLnhrdac2Controller():
         ramp: ramp/step generator ("A", "B", "C" or "D")
 
         Returns:
-        string: associated DAC channel is available ("1") 
-            or not available ("0")
+        bool: associated DAC channel is available (True) 
+            or not available (False)
         """
 
-        return self.write(f"C RMP-{ramp} AVA?")
+        return bool(int(self.write(f"C RMP-{ramp} AVA?")))
 
     #-------------------------------------------------
 
-    def get_ramp_channel(self, ramp: str) -> str:
+    def get_ramp_channel(self, ramp: str) -> int:
         """
         Read which DAC channel is associated with a ramp/step generator
 
@@ -877,9 +877,9 @@ class BaspiLnhrdac2Controller():
         ramp: ramp/step generator ("A", "B", "C" or "D")
 
         Returns:
-        string: associated DAC channel ("1" - "24")
+        int: associated DAC channel (1 - 24)
         """
-        return self.write(f"C RMP-{ramp} CH?")
+        return int(self.write(f"C RMP-{ramp} CH?"))
 
     #-------------------------------------------------
 
@@ -900,7 +900,7 @@ class BaspiLnhrdac2Controller():
     
     #-------------------------------------------------
 
-    def get_ramp_starting_voltage(self, ramp: str) -> str:
+    def get_ramp_starting_voltage(self, ramp: str) -> float:
         """
         Read the starting voltage of a ramp/step generator
 
@@ -908,10 +908,10 @@ class BaspiLnhrdac2Controller():
         ramp: ramp/step generator ("A", "B", "C" or "D")
 
         Returns:
-        string: starting voltage (+/- 10.0000000 V)
+        float: starting voltage (+/- 10.000000 V)
         """
 
-        return self.write(f"C RMP-{ramp} STAV?")
+        return round(float(self.write(f"C RMP-{ramp} STAV?")), 6)
 
     #-------------------------------------------------
 
@@ -921,7 +921,7 @@ class BaspiLnhrdac2Controller():
 
         Parameters:
         ramp: ramp/step generator ("A", "B", "C" or "D")
-        voltage: starting voltage (+/- 10.0000000 V)
+        voltage: starting voltage (+/- 10.000000 V)
 
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
@@ -931,7 +931,7 @@ class BaspiLnhrdac2Controller():
 
     #-------------------------------------------------
 
-    def get_ramp_peak_voltage(self, ramp: str) -> str:
+    def get_ramp_peak_voltage(self, ramp: str) -> float:
         """
         Read the peak voltage of a ramp/step generator.
         If the ramp shape is UP- or DOWN-ONLY, this is the stop voltage
@@ -940,10 +940,10 @@ class BaspiLnhrdac2Controller():
         ramp: ramp/step generator ("A", "B", "C" or "D")
 
         Returns:
-        string: stop/peak voltage (+/- 10.0000000 V)
+        float: stop/peak voltage (+/- 10.000000 V)
         """
 
-        return self.write(f"C RMP-{ramp} STOV?")
+        return round(float(self.write(f"C RMP-{ramp} STOV?")), 6)
 
     #-------------------------------------------------
 
@@ -954,7 +954,7 @@ class BaspiLnhrdac2Controller():
 
         Parameters:
         ramp: ramp/step generator ("A", "B", "C" or "D")
-        voltage: stop/peak voltage (+/- 10.0000000 V)
+        voltage: stop/peak voltage (+/- 10.000000 V)
 
         Returns:
         string: DAC-Error Code ("0" - "5"). "0" is always "no error"
@@ -964,7 +964,7 @@ class BaspiLnhrdac2Controller():
     
     #-------------------------------------------------
 
-    def get_ramp_duration(self, ramp: str) -> str:
+    def get_ramp_duration(self, ramp: str) -> float:
         """
         Read the ramp time of a ramp/step generator. 
         The resolution is given by the default update rate of 5 ms
@@ -973,10 +973,10 @@ class BaspiLnhrdac2Controller():
         ramp: ramp/step generator ("A", "B", "C" or "D")
 
         Returns:
-        string: ramp time (0.05 s - 1000000 s)
+        float: ramp time (0.05 s - 1000000 s)
         """
 
-        return self.write(f"C RMP-{ramp} RT?")
+        return round(float(self.write(f"C RMP-{ramp} RT?")), 3)
 
     #-------------------------------------------------
 
@@ -997,7 +997,7 @@ class BaspiLnhrdac2Controller():
     
     #-------------------------------------------------
 
-    def get_ramp_shape(self, ramp: str) -> str:
+    def get_ramp_shape(self, ramp: str) -> int:
         """
         Read the set ramp shape of a ramp/step generator. Ramping up generates 
         a sawtooth, ramping up and down generates a triangular waveform
@@ -1006,10 +1006,10 @@ class BaspiLnhrdac2Controller():
         ramp: ramp/step generator ("A", "B", "C" or "D")
 
         Returns:
-        string: ramp up only ("0"), ramp up and down ("1")
+        int: ramp up only (0), ramp up and down (1)
         """
 
-        return self.write(f"C RMP-{ramp} RS?")
+        return int(self.write(f"C RMP-{ramp} RS?"))
 
     #-------------------------------------------------
 
@@ -1030,7 +1030,7 @@ class BaspiLnhrdac2Controller():
 
     #-------------------------------------------------
 
-    def get_ramp_cycles(self, ramp: str) -> str:
+    def get_ramp_cycles(self, ramp: str) -> int:
         """
         Read the set number of ramping cycles of a ramp/step generator. 
         Upon completing the set cycles, the ramp/step generator is stopped
@@ -1039,10 +1039,10 @@ class BaspiLnhrdac2Controller():
         ramp: ramp/step generator ("A", "B", "C" or "D")
 
         Returns:
-        string: set number of ramp cycles (1 - 4000000000) or infinite cycles (0)
+        int: set number of ramp cycles (1 - 4000000000) or infinite cycles (0)
         """
 
-        return self.write(f"C RMP-{ramp} CS?")
+        return int(self.write(f"C RMP-{ramp} CS?"))
     
     #-------------------------------------------------
 
@@ -1064,7 +1064,7 @@ class BaspiLnhrdac2Controller():
     
     #-------------------------------------------------
 
-    def get_ramp_mode(self, ramp: str) -> str:
+    def get_ramp_mode(self, ramp: str) -> bool:
         """
         Read the set mode of a ramp/step generator. In ramp mode the 
         output is updated every 5 ms. In step mode the output is updated 
@@ -1074,10 +1074,10 @@ class BaspiLnhrdac2Controller():
         ramp: ramp/step generator ("A", "B", "C" or "D")
 
         Returns:
-        string: RAMP mode ("0") or STEP ("1")
+        bool: RAMP mode (True) or STEP (False)
         """
 
-        return self.write(f"C RMP-{ramp} STEP?")
+        return not bool(int(self.write(f"C RMP-{ramp} STEP?")))
 
     #-------------------------------------------------
 
@@ -1358,7 +1358,7 @@ class BaspiLnhrdac2Controller():
     
     #-------------------------------------------------
 
-    def get_awg_channel_available(self, awg: str) -> bool: 
+    def get_awg_channel_availability(self, awg: str) -> bool: 
         """
         Read the current availability for the selected output channel of an 
         AWG. A channel is only available if there is no AWG running on it
@@ -1919,7 +1919,7 @@ class BaspiLnhrdac2Controller():
 
     #-------------------------------------------------
 
-    def set_swg_selected_operation(self, operation: int) -> str:
+    def set_swg_select_operation(self, operation: int) -> str:
         """
         Select the wave memory operation that will be applied with the command 
         "Apply to wave memory now" (apply_swg_operation())
