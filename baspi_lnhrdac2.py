@@ -226,10 +226,9 @@ class BaspiLnhrdac2AWG(InstrumentModule):
             raise MemoryError("Error occured while writing to the devices memory.")
         
         self.__controller.write_wav_to_awg(awg)
-        log.info(f"The AWG-{awg} has been written")
         while self.__controller.get_wav_memory_busy(awg):
             pass
-        log.info(f"The AWG-{awg} has been written")
+        
 
 # class ----------------------------------------------------------------
 
