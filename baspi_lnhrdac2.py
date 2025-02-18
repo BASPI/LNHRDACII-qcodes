@@ -317,6 +317,58 @@ class BaspiLnhrdac2SWGConfig():
     phase: float = 0.0
     dutycycle: float = 0.0
 
+    def __check_min_max(self, val: int | float, min: int | float, max: int | float, property: str) -> None:
+        if type(min) != type(max):
+            raise ValueError(f"Minimum and maximum of {property} are not of the same type.")
+        if type(val) != type(min):
+            raise ValueError(f"Configuration value {property} is of the wrong type. Use {type(min)} for {property}.")
+        if val < min: 
+            raise ValueError(f"Configuration value {property} is too small. Increase {property} to {min}.")
+        if val < min: 
+            raise ValueError(f"Configuration value {property} is too big. Decrease {property} to {max}.")
+        
+    @property
+    def frequency(self) -> float:
+        return self._frequency
+    @frequency.setter
+    def frequency(self, val: float) -> None:
+        self.__check_min_max(val, min = 0.001, max = 10_000, property = "frequency")
+        self._frequency = val
+
+    @property
+    def amplitude(self) -> float:
+        return self._amplitude
+    @amplitude.setter
+    def amplitude(self, val: float) -> None:
+        self.__check_min_max(val, min = -50.0, max = 50.0, property = "amplitude")
+        self._amplitude = val
+
+    @property
+    def offset(self) -> float:
+        return self._offset
+    @offset.setter
+    def offset(self, val: float) -> None:
+        self.__check_min_max(val, min = -10.0, max = 10.0, property = "offset")
+        self._offset = val
+    
+    @property
+    def phase(self) -> float:
+        return self._phase
+    @phase.setter
+    def phase(self, val: float) -> None:
+        self.__check_min_max(val, min = -360.0, max = 360.0, property = "phase")
+        self._phase = val
+
+    @property
+    def dutycyle(self) -> float:
+        return self._dutycyle
+    @dutycyle.setter
+    def dutycyle(self, val: float) -> None:
+        self.__check_min_max(val, min = 0.0, max = 100.0, property = "dutycyle")
+        self._dutycyle = val
+        
+    
+
 # class ----------------------------------------------------------------
 
 class BaspiLnhrdac2SWG(InstrumentModule):
@@ -459,7 +511,98 @@ class BaspiLnhrdac2Fast2dConfig():
     y_steps: int = 10,
     acquisition_delay: float = 0.0,
     adaptive_shift: float = 0.0
-  
+
+    def __check_min_max(self, val: int | float, min: int | float, max: int | float, property: str) -> None:
+        if type(min) != type(max):
+            raise ValueError(f"Minimum and maximum of {property} are not of the same type.")
+        if type(val) != type(min):
+            raise ValueError(f"Configuration value {property} is of the wrong type. Use {type(min)} for {property}.")
+        if val < min: 
+            raise ValueError(f"Configuration value {property} is too small. Increase {property} to {min}.")
+        if val < min: 
+            raise ValueError(f"Configuration value {property} is too big. Decrease {property} to {max}.")
+
+    @property
+    def x_channel(self) -> int:
+        return self._x_channel
+    @x_channel.setter
+    def x_channel(self, val: int) -> None:
+        self.__check_min_max(val, min = 1, max = 12, property = "x_channel")
+        self._x_channel = val
+
+    @property
+    def x_start_voltage(self) -> float:
+        return self._x_start_voltage
+    @x_start_voltage.setter
+    def x_start_voltage(self, val: float) -> None:
+        self.__check_min_max(val, min = -10.0, max = 10.0, property = "x_start_voltage")
+        self._x_start_voltage = val
+
+    @property
+    def x_stop_voltage(self) -> float:
+        return self._x_stop_voltage
+    @x_stop_voltage.setter
+    def x_stop_voltage(self, val: float) -> None:
+        self.__check_min_max(val, min = -10.0, max = 10.0, property = "x_stop_voltage")
+        self._x_stop_voltage = val
+
+    @property
+    def x_steps(self) -> int:
+        return self._x_steps
+    @x_steps.setter
+    def x_steps(self, val: int) -> None:
+        self.__check_min_max(val, min = 10, max = 16_777_216, property = "x_steps")
+        self._x_steps = val
+
+    @property
+    def y_channel(self) -> int:
+        return self._y_channel
+    @y_channel.setter
+    def y_channel(self, val: int) -> None:
+        self.__check_min_max(val, min = 1, max = 12, property = "y_channel")
+        self._y_channel = val
+
+    @property
+    def y_start_voltage(self) -> float:
+        return self._y_start_voltage
+    @y_start_voltage.setter
+    def y_start_voltage(self, val: float) -> None:
+        self.__check_min_max(val, min = -10.0, max = 10.0, property = "y_start_voltage")
+        self._y_start_voltage = val
+
+    @property
+    def y_stop_voltage(self) -> float:
+        return self._y_stop_voltage
+    @y_stop_voltage.setter
+    def y_stop_voltage(self, val: float) -> None:
+        self.__check_min_max(val, min = -10.0, max = 10.0, property = "y_stop_voltage")
+        self._y_stop_voltage = val
+
+    @property
+    def y_steps(self) -> int:
+        return self._y_steps
+    @y_steps.setter
+    def y_steps(self, val: int) -> None:
+        self.__check_min_max(val, min = 1, max = 16_777_216, property = "y_steps")
+        self._y_steps = val
+
+    @property
+    def acquisition_delay(self) -> float:
+        return self._acquisition_delay
+    @acquisition_delay.setter
+    def acquisition_delay(self, val: float) -> None:
+        self.__check_min_max(val, min = 0.00001, max = 4000.0, property = "acquisition_delay")
+        self._acquisition_delay = val
+
+    @property
+    def adaptive_shift(self) -> float:
+        return self._adaptive_shift
+    @adaptive_shift.setter
+    def adaptive_shift(self, val: float) -> None:
+        self.__check_min_max(val, min = -10.0, max = 10.0, property = "adaptive_shift")
+        self._adaptive_shift = val
+
+      
 # class ----------------------------------------------------------------
 
 class BaspiLnhrdac2Fast2d(InstrumentModule):
@@ -474,11 +617,12 @@ class BaspiLnhrdac2Fast2d(InstrumentModule):
 
         super().__init__(parent, name)
         self.__controller = controller
+        self.__awg_xy = None
 
         self.configuration = self.add_parameter(
             name = "configuration",
             get_cmd = None,
-            set_cmd = None
+            set_cmd = self.__set_2d_configuration
         )
 
         self.trigger = self.add_parameter(
@@ -498,17 +642,17 @@ class BaspiLnhrdac2Fast2d(InstrumentModule):
         self.y_axis = self.add_parameter(
             name = "y_axis",
             unit = "V",
-            parameter_class = ParameterWithSetpoints,
+            # parameter_class = ParameterWithSetpoints,
             get_cmd = None,
             set_cmd = None,
-            setpoints = (self.x_axis,),
+            # setpoints = (self.x_axis,),
             vals = None
         )
 
         self.enable = self.add_parameter(
             name = "enable",
             get_cmd = None,
-            set_cmd = None
+            set_cmd = partial(controller.set_awg_start_stop, self.__awg_xy)
         )    
 
     #-------------------------------------------------
@@ -522,61 +666,63 @@ class BaspiLnhrdac2Fast2d(InstrumentModule):
         """
         
         """
+        
+        # check limits of input values
 
         # choose AWG, ramp and channels
         try:
             if not self.__controller.get_awg_run_state("a") and self.__controller.get_ramp_state("a") == 0:
-                awg_ramp = "a"
+                self.__awg_xy = "a"
             elif not self.__controller.get_awg_run_state("b") and self.__controller.get_ramp_state("b") == 0:
-                awg_ramp = "b"
+                self.__awg_xy = "b"
             elif not self.__controller.get_awg_run_state("c") and self.__controller.get_ramp_state("c") == 0:
-                awg_ramp = "c"
+                self.__awg_xy = "c"
             elif not self.__controller.get_awg_run_state("d") and self.__controller.get_ramp_state("d") == 0:
-                awg_ramp = "d"
+                self.__awg_xy = "d"
             else:
                 raise SystemError
         except (KeyError, SystemError):
             raise SystemError("There are not enough AWG resources available. Try again after stopping currently running AWGs and ramp generators.")
         
-        self.__controller.set_awg_channel(awg_ramp, config.y_channel)
-        if not self.__controller.get_awg_channel_availability(awg_ramp):
+        self.__controller.set_awg_channel(self.__awg_xy, config.y_channel)
+        if not self.__controller.get_awg_channel_availability(self.__awg_xy):
             raise SystemError(f"The chosen y-axis output (channel {config.y_channel}) is not available.")
         
-        self.__controller.set_ramp_channel(awg_ramp, config.x_channel)
-        if not self.__controller.get_ramp_channel_availability(awg_ramp):
+        self.__controller.set_ramp_channel(self.__awg_xy, config.x_channel)
+        if not self.__controller.get_ramp_channel_availability(self.__awg_xy):
             raise SystemError(f"The chosen x-axis output (channel {config.y_channel}) is not available.")
         
-        memory = {"a": 0, "b": 1, "c": 2, "d": 0}
-        board ={"a": "ab", "b": "ab", "c": "cd", "d": "cd"}
+        board = {"a": "ab", "b": "ab", "c": "cd", "d": "cd"}
 
-        # set up x-axis
-        self.__controller.set_ramp_starting_voltage(awg_ramp, config.x_start_voltage)
-        self.__controller.set_ramp_peak_voltage(awg_ramp, config.x_stop_voltage)
+        # calculate internal values, check for limits
         ramp_time = 0.005 * (config.x_steps + 1)
-        self.__controller.set_ramp_duration(awg_ramp, ramp_time)
-        self.__controller.set_ramp_shape(awg_ramp, 0)
-        self.__controller.set_ramp_cycles(awg_ramp, 1)
-        self.__controller.select_ramp_step(awg_ramp, 1)
-
-        # set up y-axis
-        clock_period = int(config.acquisition_delay * 1000)
-        period = config.y_steps * (0.000001 * clock_period)
+        clock_period = int(config.acquisition_delay * 1000000)
+        period = config.y_steps * config.acquisition_delay
         frequency = 1.0 / period
         amplitude = config.y_stop_voltage - config.y_start_voltage
         offset = config.y_start_voltage
 
         if period < 0.006:
-            raise SystemError(f"The configured y-axis sweep is too short ({period} s). Increase number of steps or acquisition delay. Minimal sweep time is 0.006 s.")
-        
-        self.__controller.set_awg_cycles(awg_ramp, 1)
-        self.__controller.set_awg_trigger_mode(awg_ramp, 0)
+            raise SystemError(f"The configured y-axis sweep is too short ({period:.3f} s). Minimal sweep time is 0.006 s. Increase number of steps or acquisition delay.")
 
-        if self.__controller.get_awg_clock_period(board[awg_ramp]) != clock_period: 
+        # set up x-axis
+        self.__controller.set_ramp_starting_voltage(self.__awg_xy, config.x_start_voltage)
+        self.__controller.set_ramp_peak_voltage(self.__awg_xy, config.x_stop_voltage)
+        self.__controller.set_ramp_duration(self.__awg_xy, ramp_time)
+        self.__controller.set_ramp_shape(self.__awg_xy, 0)
+        self.__controller.set_ramp_cycles(self.__awg_xy, 1)
+        self.__controller.select_ramp_step(self.__awg_xy, 1)
+
+        # set up y-axis
+        self.__controller.set_awg_cycles(self.__awg_xy, 1)
+        self.__controller.set_awg_trigger_mode(self.__awg_xy, 0)
+
+        if self.__controller.get_awg_clock_period(board[self.__awg_xy]) != clock_period: 
             try:
-                self.__controller.set_awg_clock_period(board[awg_ramp], clock_period)
-                print(f"Clock period of AWG {board[awg_ramp][0].upper()} and {board[awg_ramp][1].upper()} has been changed to {clock_period}.")
+                self.__controller.set_awg_clock_period(board[self.__awg_xy], clock_period)
+                print(f"Clock period of AWG {board[self.__awg_xy][0].upper()} and {board[self.__awg_xy][1].upper()} has been changed to {clock_period}.")
             except KeyError: 
-                raise SystemError(f"Clock period of AWG {board[awg_ramp][0].upper()} and {board[awg_ramp][1].upper()} cannot be changed. Try again after stopping currently running AWGs.")
+                raise SystemError(f"Clock period of AWG {board[self.__awg_xy][0].upper()} and {board[self.__awg_xy][1].upper()} cannot be changed. Try again after stopping currently running AWGs.")
             
         self.__controller.set_swg_adapt_clock(False)
         self.__controller.set_swg_new(True)
@@ -585,19 +731,24 @@ class BaspiLnhrdac2Fast2d(InstrumentModule):
         self.__controller.set_swg_amplitude(amplitude)
         self.__controller.set_swg_offset(offset)
         self.__controller.set_swg_phase(0)
-        self.__controller.set_swg_wav_memory(memory)
+        self.__controller.set_swg_wav_memory(self.__awg_xy)
         self.__controller.set_swg_selected_operation(2)
         
-        if self.__controller.get_wav_memory_size(awg_ramp) > 0:
-            print(f"Memory of AWG {awg_ramp.upper()} is not empty and will b e overwritten.")
+        if self.__controller.get_wav_memory_size(self.__awg_xy) > 0:
+            print(f"Memory of AWG {self.__awg_xy.upper()} is not empty and will be overwritten.")
 
-        self.__controller.clear_wav_memory(awg_ramp)
+        self.__controller.clear_wav_memory(self.__awg_xy)
         self.__controller.apply_swg_operation()
-        last_mem_adr = int(self.__controller.get_wav_memory_size(awg_ramp))
-        self.__controller.set_wav_memory_value(memory[awg_ramp], last_mem_adr, config.y_start_voltage)
-        self.__controller.write_wav_to_awg(awg_ramp)
-        
-            # adaptive shift
+        last_mem_adr = int(self.__controller.get_wav_memory_size(self.__awg_xy))
+        self.__controller.set_wav_memory_value(self.__awg_xy, last_mem_adr, config.y_start_voltage)
+        self.__controller.write_wav_to_awg(self.__awg_xy)
+
+        adaptive_scan = 1 if config.adaptive_shift != 0.0 else 0
+        self.__controller.set_awg_start_mode(self.__awg_xy, 1)
+        self.__controller.set_awg_reload_mode(self.__awg_xy, adaptive_scan)
+        self.__controller.set_apply_polynomial(self.__awg_xy, adaptive_scan)
+
+
     #-------------------------------------------------
 
     def __get_2d_trigger(self):
