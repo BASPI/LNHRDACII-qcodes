@@ -469,6 +469,8 @@ class BaspiLnhrdac2(VisaInstrument):
         """
 
         super().__init__(name, address)
+        self.log = logging.getLogger(f'qcodes.instrument.{self.__class__.__name__}')
+        self.log.info("Initializing MyInstrument at address %s", address)
 
         # "library" of all DAC commands
         # not to be used outside of this class definition
@@ -484,15 +486,14 @@ class BaspiLnhrdac2(VisaInstrument):
         channel_modes = self.__controller.get_all_mode()
         self.__number_channels = len(channel_modes)
         if self.__number_channels != 12 and self.__number_channels != 24:
-            raise SystemError("Physically available number of channels is not 12 or 24. Please check device.")
-            log.warn("Physically available number of channels is not 12 or 24. Please check device.")
+            raise SystemError("Physically available number of channels is not 12 or 24. Please check device.") and log.error("Physically available number of channels is not 12 or 24. Please check device.")
 
         # create channels and add to instrument
         # save references for later grouping
         channels = {}
         for channel_number in range(1, self.__number_channels + 1):
             name = f"ch{channel_number}"
-            log.info(f"added {name}")
+            log.debug(f"added {name}")
             channel = BaspiLnhrdac2Channel(self, name, channel_number, self.__controller)
             channels.update({name: channel})
             self.add_submodule(name, channel)
@@ -518,13 +519,13 @@ class BaspiLnhrdac2(VisaInstrument):
             name = f"awg{awg_designator}"
             awg = BaspiLnhrdac2AWG(self, name, awg_designator, self.__controller)
             self.add_submodule(name, awg)
-            log.info(f"created {name}")
+            log.debug(f"created {name}")
 
         # create SWG parameter, only one is allowed
         name = "swg"
         swg = BaspiLnhrdac2SWG(self, name, self.__controller)
         self.add_submodule(name, swg)
-        log.info(f"{name} created")
+        log.debug(f"{name} created")
 
         # create 2D scan Parameter
 
