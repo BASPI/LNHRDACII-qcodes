@@ -652,7 +652,8 @@ class BaspiLnhrdac2Fast2d(InstrumentModule):
         self.enable = self.add_parameter(
             name = "enable",
             get_cmd = None,
-            set_cmd = partial(controller.set_awg_start_stop, self.__awg_xy)
+            set_cmd = self.__set_enable,
+            vals = None
         )    
 
     #-------------------------------------------------
@@ -748,6 +749,8 @@ class BaspiLnhrdac2Fast2d(InstrumentModule):
         self.__controller.set_awg_reload_mode(self.__awg_xy, adaptive_scan)
         self.__controller.set_apply_polynomial(self.__awg_xy, adaptive_scan)
 
+        print("Fast adaptive 2D scan sucessfully configured. Ready to start.")
+
 
     #-------------------------------------------------
 
@@ -768,6 +771,12 @@ class BaspiLnhrdac2Fast2d(InstrumentModule):
 
     def __get_2d_x_axis():
         pass
+
+    #-------------------------------------------------
+
+    def __set_enable(self, cmd: str) -> None:
+
+        self.__controller.set_awg_start_stop(self.__awg_xy, cmd)
 
 
 # class ----------------------------------------------------------------
@@ -883,6 +892,3 @@ if __name__ == "__main__":
     station = Station()
     dac = BaspiLnhrdac2('LNHRDAC', 'TCPIP0::192.168.0.5::23::SOCKET')
     station.add_component(dac)
-
-
-
