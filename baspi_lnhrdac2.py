@@ -19,17 +19,42 @@ from qcodes.instrument import VisaInstrument, InstrumentChannel, ChannelList, In
 from qcodes.parameters import ParameterWithSetpoints, create_on_off_val_mapping
 import qcodes.validators as validate
 
-from numpy import array
+from numpy import ndarray, array
 from functools import partial
 from dataclasses import dataclass
 from time import sleep
-from warnings import warn
 
 # logging --------------------------------------------------------------
 
 import logging
 
 log = logging.getLogger(__name__)
+
+# class ----------------------------------------------------------------
+
+class BaspiLnhrdac2LockingValidator(validate.Validator):
+
+    def __init__(self, submodule: any):
+        """
+        This class implements a validator that can be used to lock any submodule of the main instrument.
+        The validator checks the locked-attribute inside the submodule. If True, the validator raises an error.
+
+        Parameters:
+        submodule: reference of submodule the locked-attribute is a part of
+
+        Raises:
+        ValueError: the submodule this parameter is a part of is locked
+        """
+        self.submodule = submodule
+
+    def validate(self, value: any, context = "BaspiLnhrdac2LockingValidator") -> None:
+        """
+        Validates if the locked-attribute is False.
+        """
+
+        if self.submodule.locked:
+            raise ValueError(f"Submodule {self.submodule} has been locked and is currently not accessible.")
+        
 
 # class ----------------------------------------------------------------
 
@@ -84,6 +109,7 @@ class BaspiLnhrdac2Channel(InstrumentChannel):
             initial_value = False
         )
 
+
 # class ----------------------------------------------------------------
 
 class BaspiLnhrdac2AWG(InstrumentModule):
@@ -101,7 +127,7 @@ class BaspiLnhrdac2AWG(InstrumentModule):
         awg_cycles: number of cycles/repetitions the device outputs before stopping
         swg: Standard Waveform Generator used to quickly create simple signals
         waveform: holds the values that will be outputted by the AWG using numpy arrays
-        waveform_setpoints: holds the time-axis values of the waveform parameter using numpy arrays
+        time_axis: holds the time-axis values of the waveform parameter using numpy arrays
         trigger: AWG external trigger mode
 
         Parameters:
@@ -114,6 +140,8 @@ class BaspiLnhrdac2AWG(InstrumentModule):
         super().__init__(parent, name)
         self.__controller = controller
 
+        self.locked = False
+
         if awg.lower() == "a" or awg.lower() == "b":
             board = "ab"
         elif awg.lower() == "c" or awg.lower() == "d":
@@ -123,14 +151,20 @@ class BaspiLnhrdac2AWG(InstrumentModule):
             name = "channel",
             get_cmd = partial(controller.get_awg_channel, awg),
             set_cmd = partial(controller.set_awg_channel, awg),
-            vals = validate.Ints(min_value=1, max_value=24)
+            vals = validate.MultiTypeAnd(
+                validate.Ints(min_value = 1, max_value = 24), 
+                BaspiLnhrdac2LockingValidator(self)
+            )
         )
 
         self.cycles = self.add_parameter(
             name = "cycles",
             get_cmd = partial(controller.get_awg_cycles, awg),
             set_cmd = partial(controller.set_awg_cycles, awg),
-            vals = validate.Ints(min_value=0, max_value=4000000000),
+            vals = validate.MultiTypeAnd(
+                validate.Ints(min_value = 0, max_value = 4000000000),
+                BaspiLnhrdac2LockingValidator(self)
+            ),
             initial_value = 0
         )
 
@@ -141,27 +175,45 @@ class BaspiLnhrdac2AWG(InstrumentModule):
             set_cmd = partial(controller.set_awg_clock_period, board),
             get_parser = self.__get_parser_awg_sampling_rate,
             set_parser = self.__set_parser_awg_sampling_rate,
-            vals = validate.Numbers(min_value = 0.00001, max_value = 4000.0)
+            vals = validate.MultiTypeAnd(
+                validate.Numbers(min_value = 0.00001, max_value = 4000.0),
+                BaspiLnhrdac2LockingValidator(self)
+            )
         )
 
-        self.waveform_setpoints = self.add_parameter(
-            name = "waveform_setpoints",
+        self.length = self.add_parameter(
+            # Qcodes only value, not saved on device
+            # must be set whenever self.waveform is set
+            name = "length",
+            get_cmd = None,
+            set_cmd = None,
+            initial_value = 0,
+            vals = validate.MultiTypeAnd(
+                validate.Ints(min_value = 0, max_value = 34000),
+                BaspiLnhrdac2LockingValidator(self)
+            )
+        )
+
+        self.time_axis = self.add_parameter(
+            name = "time_axis",
+            label = "time",
             unit = "s",
-            get_cmd = partial(self.__get_awg_waveform_setpoints, awg),
+            get_cmd = partial(self.__get_awg_time_axis, awg),
             get_parser = partial(array, dtype = float),
-            vals = validate.Arrays(shape = (controller.get_wav_memory_size(awg),))        
+            vals = validate.Arrays(shape = (self.length,))
         )
 
         self.waveform = self.add_parameter(
             name = "waveform",
+            label = f"waveform AWG {awg.upper()}",
             unit = "V",
             parameter_class = ParameterWithSetpoints,
             get_cmd = partial(self.__get_awg_waveform, awg),
             set_cmd = partial(self.__set_awg_waveform, awg),
             get_parser = partial(array, dtype = float),
             set_parser = list,
-            setpoints = (self.waveform_setpoints,),
-            vals = validate.Arrays(shape = (controller.get_wav_memory_size(awg),))
+            setpoints = (self.time_axis,),
+            vals = validate.Arrays(shape = (self.length,), min_value = -10.0, max_value = 10.0)
         )
 
         self.trigger = self.add_parameter(
@@ -169,6 +221,7 @@ class BaspiLnhrdac2AWG(InstrumentModule):
             get_cmd = partial(controller.get_awg_trigger_mode, awg),
             set_cmd = partial(controller.set_awg_trigger_mode, awg),
             val_mapping = {"disable": 0, "start only": 1, "start stop": 2, "single step": 3},
+            vals = BaspiLnhrdac2LockingValidator(self),
             initial_value = "disable"
         )
 
@@ -178,6 +231,7 @@ class BaspiLnhrdac2AWG(InstrumentModule):
             set_cmd = partial(controller.set_awg_start_stop, awg),
             get_parser = BaspiLnhrdac2AWG.__get_parser_awg_enable,
             val_mapping = create_on_off_val_mapping(on_val = "START", off_val = "STOP"),
+            vals = BaspiLnhrdac2LockingValidator(self),
             initial_value = False
         )
 
@@ -201,12 +255,11 @@ class BaspiLnhrdac2AWG(InstrumentModule):
         
         """
         
-        print("Manually setting the sampling rate of an AWG might influence other AWGs, due to shared sampling rates of AWG A and B aswell as AWG C and D.")
         return int(val * 1000000)
     
     #-------------------------------------------------
 
-    def __get_awg_waveform_setpoints(self, awg: str) -> list[float]:
+    def __get_awg_time_axis(self, awg: str) -> list[float]:
         """
         
         """
@@ -216,11 +269,12 @@ class BaspiLnhrdac2AWG(InstrumentModule):
         clock_period = self.__controller.get_awg_clock_period(board[awg])
 
         increment = clock_period / 1000000
-        setpoints = []
+        time_axis = []
         for index in range(0, memory_size):
-            setpoints.append(round(index*increment,6))
+            time_axis.append(round(index*increment,6))
 
-        return setpoints
+        return time_axis
+
     #-------------------------------------------------
         
     def __get_awg_waveform(self, awg: str) -> list[float]:
@@ -266,6 +320,14 @@ class BaspiLnhrdac2AWG(InstrumentModule):
         waveform: list of voltages (+/- 10.000000 V)
         """
 
+        # check for lock
+        validator = BaspiLnhrdac2LockingValidator(self)
+        validator.validate(waveform)
+
+        # check clock period
+        dac_board = {"a": "ab", "b": "ab", "c": "cd", "d": "cd"}
+        clock_period = self.__controller.get_awg_clock_period(dac_board[awg])
+
         self.__controller.clear_wav_memory(awg)
 
         for address in range(0, len(waveform)):
@@ -280,6 +342,10 @@ class BaspiLnhrdac2AWG(InstrumentModule):
         self.__controller.write_wav_to_awg(awg)
         while self.__controller.get_wav_memory_busy(awg):
             pass
+
+        # reset clock period bc gets changed by a ghost while write_wav_to_awg()
+        if self.__controller.get_awg_clock_period(dac_board[awg]) != clock_period:
+            self.__controller.set_awg_clock_period(dac_board[awg], clock_period)
     
     #-------------------------------------------------
 
@@ -319,7 +385,7 @@ class BaspiLnhrdac2SWGConfig():
 
     def __check_min_max(self, val: int | float, min: int | float, max: int | float, property: str) -> None:
         if type(min) != type(max):
-            raise ValueError(f"Minimum and maximum of {property} are not of the same type.")
+            raise ValueError(f"Minimum and maximum of {property} are not of the same type: {type(min)}, {type(max)}")
         if type(val) != type(min):
             raise ValueError(f"Configuration value {property} is of the wrong type. Use {type(min)} for {property}.")
         if val < min: 
@@ -332,7 +398,7 @@ class BaspiLnhrdac2SWGConfig():
         return self._frequency
     @frequency.setter
     def frequency(self, val: float) -> None:
-        self.__check_min_max(val, min = 0.001, max = 10_000, property = "frequency")
+        self.__check_min_max(val, min = 0.001, max = 10_000.0, property = "frequency")
         self._frequency = val
 
     @property
@@ -366,8 +432,7 @@ class BaspiLnhrdac2SWGConfig():
     def dutycyle(self, val: float) -> None:
         self.__check_min_max(val, min = 0.0, max = 100.0, property = "dutycyle")
         self._dutycyle = val
-        
-    
+            
 
 # class ----------------------------------------------------------------
 
@@ -392,19 +457,13 @@ class BaspiLnhrdac2SWG(InstrumentModule):
 
         self.configuration = self.add_parameter(
             name = "configuration",
-            get_cmd = self.__get_configuration,
-            set_cmd = self.__set_configuration
+            get_cmd = None,
+            set_cmd = self.__set_swg_configuration
         )
     
     #-------------------------------------------------
 
-    def __get_configuration(self) -> BaspiLnhrdac2SWGConfig:
-        
-        pass
-
-    #-------------------------------------------------
-
-    def __set_configuration(self, config: BaspiLnhrdac2SWGConfig) -> None:
+    def __set_swg_configuration(self, config: BaspiLnhrdac2SWGConfig) -> None:
         """
         Create a waveform using the standard waveform generator. The resulting waveform is automatically written into the waveform memory.
 
@@ -455,6 +514,7 @@ class BaspiLnhrdac2SWG(InstrumentModule):
         elif config.shape == "pulse":
             self.__controller.set_swg_dutycycle(config.dutycycle)
 
+
     #-------------------------------------------------
 
     def apply(self, awg: str) -> None:
@@ -466,6 +526,18 @@ class BaspiLnhrdac2SWG(InstrumentModule):
         """
 
         awg = awg.lower()
+
+        # set awgX.length parameter, also checks if AWG is locked
+        wav_memory_size = self.__controller.get_wav_memory_size(awg)
+        if awg == "a":
+            self.parent.awga.length.set(wav_memory_size)
+        elif awg == "b":
+            self.parent.awgb.length.set(wav_memory_size)
+        elif awg == "c":
+            self.parent.awgc.length.set(wav_memory_size)
+        elif awg == "d":
+            self.parent.awgd.length.set(wav_memory_size)
+
         self.__controller.set_swg_wav_memory(awg)
 
         # decide on keep or adapt clock period
@@ -479,7 +551,7 @@ class BaspiLnhrdac2SWG(InstrumentModule):
         desired_frequency = self.__controller.get_swg_desired_frequency()
         nearest_frequency = self.__controller.get_swg_nearest_frequency()
         if nearest_frequency != desired_frequency:
-            warn(f"Frequency of {desired_frequency} Hz cannot be reached with the current settings. "
+            print(f"Frequency of {desired_frequency} Hz cannot be reached with the current settings. "
                 + f"A frequency of {nearest_frequency} Hz is used instead. "
                 + f"Changing AWG or clearing unused AWG waveforms might resolve this issue.")
 
@@ -488,6 +560,17 @@ class BaspiLnhrdac2SWG(InstrumentModule):
         self.__controller.write_wav_to_awg(awg)
         while self.__controller.get_wav_memory_busy(awg):
             pass
+
+        awg_memory_size = self.__controller.get_awg_memory_size(awg)
+        if awg_memory_size != wav_memory_size:
+            if awg == "a":
+                self.parent.awga.length.set(awg_memory_size)
+            elif awg == "b":
+                self.parent.awgb.length.set(awg_memory_size)
+            elif awg == "c":
+                self.parent.awgc.length.set(awg_memory_size)
+            elif awg == "d":
+                self.parent.awgd.length.set(awg_memory_size)
 
 
 # class ----------------------------------------------------------------
@@ -617,7 +700,23 @@ class BaspiLnhrdac2Fast2d(InstrumentModule):
 
         super().__init__(parent, name)
         self.__controller = controller
+        self.__awg_trig = None
         self.__awg_xy = None
+        self.__current_config = None
+
+        self.trigger_channel = self.add_parameter(
+            name = "trigger_channel",
+            get_cmd = None,
+            set_cmd = None,
+            vals = validate.Ints(min_value = 13, max_value = 24)
+        )
+
+        self.trigger = self.add_parameter(
+            name = "trigger",
+            get_cmd = None,
+            set_cmd = self.__set_2d_trigger,
+            initial_value = "disabled"
+        )
 
         self.configuration = self.add_parameter(
             name = "configuration",
@@ -625,41 +724,85 @@ class BaspiLnhrdac2Fast2d(InstrumentModule):
             set_cmd = self.__set_2d_configuration
         )
 
-        self.trigger = self.add_parameter(
-            name = "trigger",
-            get_cmd = None,
-            set_cmd = None
-        )
-
         self.x_axis = self.add_parameter(
             name = "x_axis",
             unit = "V",
-            get_cmd = None,
-            set_cmd = None,
-            vals = None
+            get_cmd = self.__get_2d_x_axis,
+            set_cmd = None
         )
 
         self.y_axis = self.add_parameter(
             name = "y_axis",
             unit = "V",
-            # parameter_class = ParameterWithSetpoints,
-            get_cmd = None,
-            set_cmd = None,
-            # setpoints = (self.x_axis,),
-            vals = None
+            get_cmd = self.__get_2d_y_axis,
+            set_cmd = None
         )
 
         self.enable = self.add_parameter(
             name = "enable",
             get_cmd = None,
-            set_cmd = self.__set_enable,
-            vals = None
+            set_cmd = self.__set_2d_enable,
+            val_mapping = create_on_off_val_mapping(on_val = True, off_val = False),
+            initial_value = False
         )    
 
     #-------------------------------------------------
 
-    def __get_2d_configuration(self) -> BaspiLnhrdac2Fast2dConfig:
+    def __get_2d_trigger_channel(self) -> int:
         pass
+
+    #-------------------------------------------------
+
+    def __set_2d_trigger_channel(self, channel: int) -> None:
+        """
+        
+        """
+        pass
+
+    #-------------------------------------------------
+
+    def __set_2d_trigger(self, mode: str) -> None:
+        """
+        
+        """
+        
+        fast2d_triggers = (
+            "disabled",
+            "line in",
+            "line out",
+            "point out"
+        )
+
+        if mode not in fast2d_triggers:
+            raise ValueError(f"Value '{mode}' is invalid. Valid values are: {fast2d_triggers}.")
+        
+        if self.__awg_xy == "a":
+            self.parent.awga.locked = False
+            if mode == "disabled":
+                self.parent.awga.trigger.set("disabled")
+                self.__controller.set_awg_start_mode(self.__awg_xy, 1)
+            elif mode == "line in":
+                self.parent.awga.trigger.set("start only")
+                self.__controller.set_awg_start_mode(self.__awg_xy, 0)
+            elif mode == "line out":
+                self.parent.awga.trigger.set("disabled")
+                self.__controller.set_awg_start_mode(self.__awg_xy, 1)
+            elif mode == "point out":
+                # choosing AWG for trigger
+                if not self.__controller.get_awg_run_state("c") \
+                and not self.__controller.get_awg_run_state("d"):
+                    self.__awg_trig = "c"
+                else:
+                    raise SystemError(f"During the setup of the fast 2D scan point by point trigger output, AWG C and D must not run.")
+                
+                if self.__awg_trig == "c":
+                    self.parent.awgc.locked = False
+
+                self.parent.awgc.channel.set(self)
+
+                self.__controller.set_awg_channel()          
+
+            self.parent.awga.locked = True
 
     #-------------------------------------------------
 
@@ -667,25 +810,23 @@ class BaspiLnhrdac2Fast2d(InstrumentModule):
         """
         
         """
-        
-        # check limits of input values
 
-        # choose AWG, ramp and channels
-        try:
-            if not self.__controller.get_awg_run_state("a") and self.__controller.get_ramp_state("a") == 0:
-                self.__awg_xy = "a"
-            elif not self.__controller.get_awg_run_state("b") and self.__controller.get_ramp_state("b") == 0:
-                self.__awg_xy = "b"
-            elif not self.__controller.get_awg_run_state("c") and self.__controller.get_ramp_state("c") == 0:
-                self.__awg_xy = "c"
-            elif not self.__controller.get_awg_run_state("d") and self.__controller.get_ramp_state("d") == 0:
-                self.__awg_xy = "d"
-            else:
-                raise SystemError
-        except (KeyError, SystemError):
-            raise SystemError("There are not enough AWG resources available. Try again after stopping currently running AWGs and ramp generators.")
+        print("Starting to configure fast adaptive 2D scan. AWG A will be repurposed. AWG A and AWG B connot be used while the 2D scan is running.")
+
+        # choose AWG which gets assigned to the scan
+        if not self.__controller.get_awg_run_state("a") \
+        and self.__controller.get_ramp_state("a") == 0 \
+        and not self.__controller.get_awg_run_state("b") \
+        and self.__controller.get_ramp_state("b") == 0:
+            self.__awg_xy = "a"
+        else:
+            raise SystemError(f"During the setup of the fast adaptive 2D scan, AWG A and B must not run.")
         
-        self.__controller.set_awg_channel(self.__awg_xy, config.y_channel)
+        if self.__awg_xy == "a":
+            self.parent.awga.locked = False
+
+        # self.__controller.set_awg_channel(self.__awg_xy, config.y_channel)
+        self.parent.awga.channel.set(config.y_channel)
         if not self.__controller.get_awg_channel_availability(self.__awg_xy):
             raise SystemError(f"The chosen y-axis output (channel {config.y_channel}) is not available.")
         
@@ -693,91 +834,106 @@ class BaspiLnhrdac2Fast2d(InstrumentModule):
         if not self.__controller.get_ramp_channel_availability(self.__awg_xy):
             raise SystemError(f"The chosen x-axis output (channel {config.y_channel}) is not available.")
         
-        board = {"a": "ab", "b": "ab", "c": "cd", "d": "cd"}
+        dac_board = {"a": "ab", "b": "ab", "c": "cd", "d": "cd"}
 
         # calculate internal values, check for limits
-        ramp_time = 0.005 * (config.x_steps + 1)
-        clock_period = int(config.acquisition_delay * 1000000)
-        period = config.y_steps * config.acquisition_delay
-        frequency = 1.0 / period
-        amplitude = config.y_stop_voltage - config.y_start_voltage
-        offset = config.y_start_voltage
-
-        if period < 0.006:
-            raise SystemError(f"The configured y-axis sweep is too short ({period:.3f} s). Minimal sweep time is 0.006 s. Increase number of steps or acquisition delay.")
+        x_ramp_time = 0.005 * (config.x_steps + 1)
+        y_step_size = (config.y_stop_voltage - config.y_start_voltage) / config.y_steps
+        y_period = config.y_steps * config.acquisition_delay
+        if y_period < 0.006:
+            raise SystemError(f"The configured y-axis sweep is too short ({y_period:.3f} s). Minimal sweep time is 0.006 s. Increase number of steps or acquisition delay.")
 
         # set up x-axis
         self.__controller.set_ramp_starting_voltage(self.__awg_xy, config.x_start_voltage)
         self.__controller.set_ramp_peak_voltage(self.__awg_xy, config.x_stop_voltage)
-        self.__controller.set_ramp_duration(self.__awg_xy, ramp_time)
+        self.__controller.set_ramp_duration(self.__awg_xy, x_ramp_time)
         self.__controller.set_ramp_shape(self.__awg_xy, 0)
         self.__controller.set_ramp_cycles(self.__awg_xy, 1)
         self.__controller.select_ramp_step(self.__awg_xy, 1)
 
         # set up y-axis
-        self.__controller.set_awg_cycles(self.__awg_xy, 1)
-        self.__controller.set_awg_trigger_mode(self.__awg_xy, 0)
+        y_axis_waveform = []
+        for step in range(0, config.y_steps):
+            y_axis_waveform.append(step * y_step_size)
+        y_axis_waveform.append(config.y_start_voltage)
+        y_axis_waveform = array(y_axis_waveform)
 
-        if self.__controller.get_awg_clock_period(board[self.__awg_xy]) != clock_period: 
-            try:
-                self.__controller.set_awg_clock_period(board[self.__awg_xy], clock_period)
-                print(f"Clock period of AWG {board[self.__awg_xy][0].upper()} and {board[self.__awg_xy][1].upper()} has been changed to {clock_period}.")
-            except KeyError: 
-                raise SystemError(f"Clock period of AWG {board[self.__awg_xy][0].upper()} and {board[self.__awg_xy][1].upper()} cannot be changed. Try again after stopping currently running AWGs.")
-            
-        self.__controller.set_swg_adapt_clock(False)
-        self.__controller.set_swg_new(True)
-        self.__controller.set_swg_shape(3)
-        self.__controller.set_swg_desired_frequency(frequency)
-        self.__controller.set_swg_amplitude(amplitude)
-        self.__controller.set_swg_offset(offset)
-        self.__controller.set_swg_phase(0)
-        self.__controller.set_swg_wav_memory(self.__awg_xy)
-        self.__controller.set_swg_selected_operation(2)
-        
-        if self.__controller.get_wav_memory_size(self.__awg_xy) > 0:
-            print(f"Memory of AWG {self.__awg_xy.upper()} is not empty and will be overwritten.")
+        self.parent.awga.trigger.set("disable")
+        self.parent.awga.cycles.set(1)
+        self.parent.awga.sampling_rate.set(config.acquisition_delay)
+        self.parent.awga.length.set(len(y_axis_waveform))
+        self.parent.awga.waveform.set(y_axis_waveform)
 
-        self.__controller.clear_wav_memory(self.__awg_xy)
-        self.__controller.apply_swg_operation()
-        last_mem_adr = int(self.__controller.get_wav_memory_size(self.__awg_xy))
-        self.__controller.set_wav_memory_value(self.__awg_xy, last_mem_adr, config.y_start_voltage)
-        self.__controller.write_wav_to_awg(self.__awg_xy)
-
+        # set up adaptive shift
         adaptive_scan = 1 if config.adaptive_shift != 0.0 else 0
         self.__controller.set_awg_start_mode(self.__awg_xy, 1)
         self.__controller.set_awg_reload_mode(self.__awg_xy, adaptive_scan)
         self.__controller.set_apply_polynomial(self.__awg_xy, adaptive_scan)
 
+        # lock AWG to prevent User from manipulating/ breaking stuff
+        self.parent.awga.locked = True
+        self.parent.awgb.locked = True
+
+        self.__current_config = config
+
         print("Fast adaptive 2D scan sucessfully configured. Ready to start.")
 
-
     #-------------------------------------------------
 
-    def __get_2d_trigger(self):
-        pass
+    def __get_2d_x_axis(self) -> ndarray:
+        """
+        
+        """
 
+        if self.__awg_xy == "a":
+            step_size = self.__controller.get_ramp_step_size(self.__awg_xy)
+            number_steps = self.__controller.get_ramp_cycle_steps(self.__awg_xy)
+            start_voltage = self.__controller.get_ramp_starting_voltage(self.__awg_xy)
+
+            waveform = []
+            for step in range(0, number_steps):
+                waveform.append(round(start_voltage + (step * step_size), 6))
+            
+            return array(waveform, dtype = float)
+        else:
+            return array([], dtype = float)
+        
     #-------------------------------------------------
 
-    def __set_2d_trigger():
-        pass
+    def __get_2d_y_axis(self) -> ndarray:
+        """
+        
+        """
 
+        if self.__awg_xy == "a":
+            self.parent.awga.locked = False
+            waveform = self.parent.awga.waveform.get()
+            self.parent.awga.locked = True
+            return waveform
+        else:
+            return array([], dtype = float)
+        
     #-------------------------------------------------
 
-    def __get_2d_x_axis():
-        pass
+    def __set_2d_enable(self, enable: bool) -> None:
+        """
+        
+        """
 
-    #-------------------------------------------------
-
-    def __get_2d_x_axis():
-        pass
-
-    #-------------------------------------------------
-
-    def __set_enable(self, cmd: str) -> None:
-
-        self.__controller.set_awg_start_stop(self.__awg_xy, cmd)
-
+        if enable:
+            if self.__awg_xy == "a":
+                self.parent.awga.locked = False
+                self.parent.awga.enable.set(True)
+                self.parent.awga.locked = True
+                self.parent.awgb.locked = True
+                print(f"Fast adaptive 2D scan started with configuration {self.__current_config}.")
+        elif self.__awg_xy == "a":
+            self.__awg_xy = None
+            self.__current_config = None
+            self.parent.awga.locked = False
+            self.parent.awgb.locked = False
+            print(f"Fast adaptive 2D scan stopped. All AWGs can be used normally again.")
+            
 
 # class ----------------------------------------------------------------
 
@@ -800,21 +956,21 @@ class BaspiLnhrdac2(VisaInstrument):
         # to only have a single interface to the device
         self.__controller = BaspiLnhrdac2Controller(self)
 
-        # visa properties for telnet communication
+        # visa properties for communication
         self.visa_handle.write_termination = "\r\n"
         self.visa_handle.read_termination = "\r\n"
 
         # get number of physicallly available channels
         # for correct further initialization
         channel_modes = self.__controller.get_all_mode()
-        self.__number_channels = len(channel_modes)
-        if self.__number_channels != 12 and self.__number_channels != 24:
+        self.number_channels = len(channel_modes)
+        if self.number_channels != 12 and self.number_channels != 24:
             raise SystemError("Physically available number of channels is not 12 or 24. Please check device.")
 
         # create channels and add to instrument
         # save references for later grouping
         channels = {}
-        for channel_number in range(1, self.__number_channels + 1):
+        for channel_number in range(1, self.number_channels + 1):
             name = f"ch{channel_number}"
             channel = BaspiLnhrdac2Channel(self, name, channel_number, self.__controller)
             channels.update({name: channel})
@@ -822,16 +978,16 @@ class BaspiLnhrdac2(VisaInstrument):
 
         # grouping channels to simplify simoultaneous access
         all_channels = ChannelList(self, "all channels", BaspiLnhrdac2Channel)
-        for channel_number in range(1, self.__number_channels + 1):
+        for channel_number in range(1, self.number_channels + 1):
             channel = channels[f"ch{channel_number}"]
             all_channels.append(channel)
 
         self.add_submodule("all", all_channels)
 
-        # create awg parameters, dependent on 12/24 channel version
-        if self.__number_channels == 12:
+        # AWGs dependent on 12/24 channel version
+        if self.number_channels == 12:
             awgs = ("a", "b")
-        elif self.__number_channels == 24:
+        elif self.number_channels == 24:
             awgs = ("a", "b", "c", "d")
 
         for awg_designator in awgs:
@@ -839,12 +995,12 @@ class BaspiLnhrdac2(VisaInstrument):
             awg = BaspiLnhrdac2AWG(self, name, awg_designator, self.__controller)
             self.add_submodule(name, awg)
 
-        # create SWG parameter, only one is allowed
+        # only one SWG module available
         name = "swg"
         swg = BaspiLnhrdac2SWG(self, name, self.__controller)
         self.add_submodule(name, swg)
 
-        # create 2D scan Parameter, only one is allowed
+        #  only one 2D scan module available
         name = "fast2d"
         fast2d = BaspiLnhrdac2Fast2d(self, name, self.__controller)
         self.add_submodule(name, fast2d)
@@ -866,7 +1022,7 @@ class BaspiLnhrdac2(VisaInstrument):
         dict: contains all QCodes required IDN fields
         """
         vendor = "Basel Precision Instruments GmbH (BASPI)"
-        model = f"LNHR DAC II (SP1060) - {self.__number_channels} channel version"
+        model = f"LNHR DAC II (SP1060) - {self.number_channels} channel version"
 
         hardware_info = self.__controller.get_serial()
         serial = hardware_info[37:51]
