@@ -376,29 +376,53 @@ class BaspiLnhrdac2SWGConfig():
     dutycycle: signal dutycycle in % (0.0 - 100.0), only applicable with shape "pulse"
     """
 
-    shape: str = "sine"
-    frequency: float = 100.0
-    amplitude: float = 0.5
-    offset: float = 0.0
-    phase: float = 0.0
-    dutycycle: float = 0.0
+    shape: str
+    frequency: float
+    amplitude: float
+    offset: float
+    phase: float
+    dutycycle: float
 
-    def __check_min_max(self, val: int | float, min: int | float, max: int | float, property: str) -> None:
-        if type(min) != type(max):
-            raise ValueError(f"Minimum and maximum of {property} are not of the same type: {type(min)}, {type(max)}")
-        if type(val) != type(min):
-            raise ValueError(f"Configuration value {property} is of the wrong type. Use {type(min)} for {property}.")
-        if val < min: 
-            raise ValueError(f"Configuration value {property} is too small. Increase {property} to {min}.")
-        if val < min: 
-            raise ValueError(f"Configuration value {property} is too big. Decrease {property} to {max}.")
+    #-------------------------------------------------
+
+    def __post_init__(self):
+        """default values for unspecified values"""
+        if isinstance(self.shape, property):
+            self.shape = "sine"
+        if isinstance(self.frequency, property):
+            self.frequency = 100.0
+        if isinstance(self.amplitude, property):
+            self.amplitude = 1.0
+        if isinstance(self.offset, property):
+            self.offset = 0.0
+        if isinstance(self.phase, property):
+            self.phase = 0.0
+        if isinstance(self.dutycycle, property):
+            self.dutycycle = 0.0
+
+    #-------------------------------------------------
+
+    def __check_min_max(self, val: int | float, min: int | float, max: int | float, prop: str) -> None:
+        """check validity of properties"""
+        if isinstance(val, property):
+            # do nothing if value is not specified
+            return
         
+        if not isinstance(val, (int, float)):
+            raise ValueError(f"Configuration value {prop} is of not the correct type.")
+        if val < min: 
+            raise ValueError(f"Configuration value {prop} is too small. Increase {prop} to {min}.")
+        if val > max: 
+            raise ValueError(f"Configuration value {prop} is too big. Decrease {prop} to {max}.")
+        
+    #-------------------------------------------------
+
     @property
     def frequency(self) -> float:
         return self._frequency
     @frequency.setter
     def frequency(self, val: float) -> None:
-        self.__check_min_max(val, min = 0.001, max = 10_000.0, property = "frequency")
+        self.__check_min_max(val, min = 0.001, max = 10_000.0, prop = "frequency")
         self._frequency = val
 
     @property
@@ -406,7 +430,7 @@ class BaspiLnhrdac2SWGConfig():
         return self._amplitude
     @amplitude.setter
     def amplitude(self, val: float) -> None:
-        self.__check_min_max(val, min = -50.0, max = 50.0, property = "amplitude")
+        self.__check_min_max(val, min = -50.0, max = 50.0, prop = "amplitude")
         self._amplitude = val
 
     @property
@@ -414,7 +438,7 @@ class BaspiLnhrdac2SWGConfig():
         return self._offset
     @offset.setter
     def offset(self, val: float) -> None:
-        self.__check_min_max(val, min = -10.0, max = 10.0, property = "offset")
+        self.__check_min_max(val, min = -10.0, max = 10.0, prop = "offset")
         self._offset = val
     
     @property
@@ -422,16 +446,16 @@ class BaspiLnhrdac2SWGConfig():
         return self._phase
     @phase.setter
     def phase(self, val: float) -> None:
-        self.__check_min_max(val, min = -360.0, max = 360.0, property = "phase")
+        self.__check_min_max(val, min = -360.0, max = 360.0, prop = "phase")
         self._phase = val
 
     @property
-    def dutycyle(self) -> float:
-        return self._dutycyle
-    @dutycyle.setter
-    def dutycyle(self, val: float) -> None:
-        self.__check_min_max(val, min = 0.0, max = 100.0, property = "dutycyle")
-        self._dutycyle = val
+    def dutycycle(self) -> float:
+        return self._dutycycle
+    @dutycycle.setter
+    def dutycycle(self, val: float) -> None:
+        self.__check_min_max(val, min = 0.0, max = 100.0, prop = "dutycycle")
+        self._dutycycle = val
             
 
 # class ----------------------------------------------------------------
@@ -514,7 +538,6 @@ class BaspiLnhrdac2SWG(InstrumentModule):
         elif config.shape == "pulse":
             self.__controller.set_swg_dutycycle(config.dutycycle)
 
-
     #-------------------------------------------------
 
     def apply(self, awg: str) -> None:
@@ -583,34 +606,66 @@ class BaspiLnhrdac2Fast2dConfig():
     Attributes:
     
     """
+    
+    x_channel: int
+    x_start_voltage: float
+    x_stop_voltage: float
+    x_steps: int
+    y_channel: int
+    y_start_voltage: float
+    y_stop_voltage: float
+    y_steps: int
+    acquisition_delay: float
+    adaptive_shift: float
 
-    x_channel: int = 1,
-    x_start_voltage: float = 0.0,
-    x_stop_voltage: float = 1.0,
-    x_steps: int = 10,
-    y_channel: int = 2,
-    y_start_voltage: float = 0.0,
-    y_stop_voltage: float = 1.0,
-    y_steps: int = 10,
-    acquisition_delay: float = 0.0,
-    adaptive_shift: float = 0.0
+    #-------------------------------------------------
 
-    def __check_min_max(self, val: int | float, min: int | float, max: int | float, property: str) -> None:
-        if type(min) != type(max):
-            raise ValueError(f"Minimum and maximum of {property} are not of the same type.")
-        if type(val) != type(min):
-            raise ValueError(f"Configuration value {property} is of the wrong type. Use {type(min)} for {property}.")
+    def __post_init__(self):
+        """default values for unspecified values"""
+        if isinstance(self.x_channel, property):
+            self.x_channel = 1
+        if isinstance(self.x_start_voltage, property):
+            self.x_start_voltage = 0.0
+        if isinstance(self.x_stop_voltage, property):
+            self.x_stop_voltage = 1.0
+        if isinstance(self.x_steps, property):
+            self.x_steps = 10
+        if isinstance(self.y_channel, property):
+            self.y_channel = 2
+        if isinstance(self.y_start_voltage, property):
+            self.y_start_voltage = 0.0
+        if isinstance(self.y_stop_voltage, property):
+            self.y_stop_voltage = 1.0
+        if isinstance(self.y_steps, property):
+            self.y_steps = 10
+        if isinstance(self.acquisition_delay, property):
+            self.acquisition_delay = 0.0
+        if isinstance(self.adaptive_shift, property):
+            self.adaptive_shift = 0.0
+    
+    #-------------------------------------------------
+
+    def __check_min_max(self, val: int | float, min: int | float, max: int | float, prop: str) -> None:
+        """check validity of properties"""
+        if isinstance(val, property):
+            # default values are not checked!
+            return
+        
+        if not isinstance(val, (int, float)):
+            raise ValueError(f"Configuration value {prop} is of not the correct type.")
         if val < min: 
-            raise ValueError(f"Configuration value {property} is too small. Increase {property} to {min}.")
-        if val < min: 
-            raise ValueError(f"Configuration value {property} is too big. Decrease {property} to {max}.")
+            raise ValueError(f"Configuration value {prop} is too small. Increase {prop} to {min}.")
+        if val > max: 
+            raise ValueError(f"Configuration value {prop} is too big. Decrease {prop} to {max}.")
+        
+    #-------------------------------------------------
 
     @property
     def x_channel(self) -> int:
         return self._x_channel
     @x_channel.setter
     def x_channel(self, val: int) -> None:
-        self.__check_min_max(val, min = 1, max = 12, property = "x_channel")
+        self.__check_min_max(val, min = 1, max = 12, prop = "x_channel")
         self._x_channel = val
 
     @property
@@ -618,7 +673,7 @@ class BaspiLnhrdac2Fast2dConfig():
         return self._x_start_voltage
     @x_start_voltage.setter
     def x_start_voltage(self, val: float) -> None:
-        self.__check_min_max(val, min = -10.0, max = 10.0, property = "x_start_voltage")
+        self.__check_min_max(val, min = -10.0, max = 10.0, prop = "x_start_voltage")
         self._x_start_voltage = val
 
     @property
@@ -626,7 +681,7 @@ class BaspiLnhrdac2Fast2dConfig():
         return self._x_stop_voltage
     @x_stop_voltage.setter
     def x_stop_voltage(self, val: float) -> None:
-        self.__check_min_max(val, min = -10.0, max = 10.0, property = "x_stop_voltage")
+        self.__check_min_max(val, min = -10.0, max = 10.0, prop = "x_stop_voltage")
         self._x_stop_voltage = val
 
     @property
@@ -634,7 +689,7 @@ class BaspiLnhrdac2Fast2dConfig():
         return self._x_steps
     @x_steps.setter
     def x_steps(self, val: int) -> None:
-        self.__check_min_max(val, min = 10, max = 16_777_216, property = "x_steps")
+        self.__check_min_max(val, min = 10, max = 16_777_216, prop = "x_steps")
         self._x_steps = val
 
     @property
@@ -642,7 +697,7 @@ class BaspiLnhrdac2Fast2dConfig():
         return self._y_channel
     @y_channel.setter
     def y_channel(self, val: int) -> None:
-        self.__check_min_max(val, min = 1, max = 12, property = "y_channel")
+        self.__check_min_max(val, min = 1, max = 12, prop = "y_channel")
         self._y_channel = val
 
     @property
@@ -650,7 +705,7 @@ class BaspiLnhrdac2Fast2dConfig():
         return self._y_start_voltage
     @y_start_voltage.setter
     def y_start_voltage(self, val: float) -> None:
-        self.__check_min_max(val, min = -10.0, max = 10.0, property = "y_start_voltage")
+        self.__check_min_max(val, min = -10.0, max = 10.0, prop = "y_start_voltage")
         self._y_start_voltage = val
 
     @property
@@ -658,7 +713,7 @@ class BaspiLnhrdac2Fast2dConfig():
         return self._y_stop_voltage
     @y_stop_voltage.setter
     def y_stop_voltage(self, val: float) -> None:
-        self.__check_min_max(val, min = -10.0, max = 10.0, property = "y_stop_voltage")
+        self.__check_min_max(val, min = -10.0, max = 10.0, prop = "y_stop_voltage")
         self._y_stop_voltage = val
 
     @property
@@ -666,7 +721,7 @@ class BaspiLnhrdac2Fast2dConfig():
         return self._y_steps
     @y_steps.setter
     def y_steps(self, val: int) -> None:
-        self.__check_min_max(val, min = 1, max = 16_777_216, property = "y_steps")
+        self.__check_min_max(val, min = 1, max = 16_777_216, prop = "y_steps")
         self._y_steps = val
 
     @property
@@ -674,7 +729,7 @@ class BaspiLnhrdac2Fast2dConfig():
         return self._acquisition_delay
     @acquisition_delay.setter
     def acquisition_delay(self, val: float) -> None:
-        self.__check_min_max(val, min = 0.00001, max = 4000.0, property = "acquisition_delay")
+        self.__check_min_max(val, min = 0.00001, max = 4000.0, prop = "acquisition_delay")
         self._acquisition_delay = val
 
     @property
@@ -682,7 +737,7 @@ class BaspiLnhrdac2Fast2dConfig():
         return self._adaptive_shift
     @adaptive_shift.setter
     def adaptive_shift(self, val: float) -> None:
-        self.__check_min_max(val, min = -10.0, max = 10.0, property = "adaptive_shift")
+        self.__check_min_max(val, min = -10.0, max = 10.0, prop = "adaptive_shift")
         self._adaptive_shift = val
 
       
@@ -704,24 +759,23 @@ class BaspiLnhrdac2Fast2d(InstrumentModule):
         self.__awg_xy = None
         self.__current_config = None
 
+        self.configuration = self.add_parameter(
+            name = "configuration",
+            get_cmd = None,
+            set_cmd = self.__set_2d_configuration
+        )
+
         self.trigger_channel = self.add_parameter(
             name = "trigger_channel",
-            get_cmd = None,
-            set_cmd = None,
+            get_cmd = self.__get_2d_trigger_channel,
+            set_cmd = self.__set_2d_trigger_channel,
             vals = validate.Ints(min_value = 13, max_value = 24)
         )
 
         self.trigger = self.add_parameter(
             name = "trigger",
             get_cmd = None,
-            set_cmd = self.__set_2d_trigger,
-            initial_value = "disabled"
-        )
-
-        self.configuration = self.add_parameter(
-            name = "configuration",
-            get_cmd = None,
-            set_cmd = self.__set_2d_configuration
+            set_cmd = self.__set_2d_trigger
         )
 
         self.x_axis = self.add_parameter(
@@ -744,65 +798,7 @@ class BaspiLnhrdac2Fast2d(InstrumentModule):
             set_cmd = self.__set_2d_enable,
             val_mapping = create_on_off_val_mapping(on_val = True, off_val = False),
             initial_value = False
-        )    
-
-    #-------------------------------------------------
-
-    def __get_2d_trigger_channel(self) -> int:
-        pass
-
-    #-------------------------------------------------
-
-    def __set_2d_trigger_channel(self, channel: int) -> None:
-        """
-        
-        """
-        pass
-
-    #-------------------------------------------------
-
-    def __set_2d_trigger(self, mode: str) -> None:
-        """
-        
-        """
-        
-        fast2d_triggers = (
-            "disabled",
-            "line in",
-            "line out",
-            "point out"
         )
-
-        if mode not in fast2d_triggers:
-            raise ValueError(f"Value '{mode}' is invalid. Valid values are: {fast2d_triggers}.")
-        
-        if self.__awg_xy == "a":
-            self.parent.awga.locked = False
-            if mode == "disabled":
-                self.parent.awga.trigger.set("disabled")
-                self.__controller.set_awg_start_mode(self.__awg_xy, 1)
-            elif mode == "line in":
-                self.parent.awga.trigger.set("start only")
-                self.__controller.set_awg_start_mode(self.__awg_xy, 0)
-            elif mode == "line out":
-                self.parent.awga.trigger.set("disabled")
-                self.__controller.set_awg_start_mode(self.__awg_xy, 1)
-            elif mode == "point out":
-                # choosing AWG for trigger
-                if not self.__controller.get_awg_run_state("c") \
-                and not self.__controller.get_awg_run_state("d"):
-                    self.__awg_trig = "c"
-                else:
-                    raise SystemError(f"During the setup of the fast 2D scan point by point trigger output, AWG C and D must not run.")
-                
-                if self.__awg_trig == "c":
-                    self.parent.awgc.locked = False
-
-                self.parent.awgc.channel.set(self)
-
-                self.__controller.set_awg_channel()          
-
-            self.parent.awga.locked = True
 
     #-------------------------------------------------
 
@@ -813,7 +809,7 @@ class BaspiLnhrdac2Fast2d(InstrumentModule):
 
         print("Starting to configure fast adaptive 2D scan. AWG A will be repurposed. AWG A and AWG B connot be used while the 2D scan is running.")
 
-        # choose AWG which gets assigned to the scan
+        # check if AWG can be used
         if not self.__controller.get_awg_run_state("a") \
         and self.__controller.get_ramp_state("a") == 0 \
         and not self.__controller.get_awg_run_state("b") \
@@ -833,8 +829,6 @@ class BaspiLnhrdac2Fast2d(InstrumentModule):
         self.__controller.set_ramp_channel(self.__awg_xy, config.x_channel)
         if not self.__controller.get_ramp_channel_availability(self.__awg_xy):
             raise SystemError(f"The chosen x-axis output (channel {config.y_channel}) is not available.")
-        
-        dac_board = {"a": "ab", "b": "ab", "c": "cd", "d": "cd"}
 
         # calculate internal values, check for limits
         x_ramp_time = 0.005 * (config.x_steps + 1)
@@ -853,7 +847,7 @@ class BaspiLnhrdac2Fast2d(InstrumentModule):
 
         # set up y-axis
         y_axis_waveform = []
-        for step in range(0, config.y_steps):
+        for step in range(0, config.y_steps + 1):
             y_axis_waveform.append(step * y_step_size)
         y_axis_waveform.append(config.y_start_voltage)
         y_axis_waveform = array(y_axis_waveform)
@@ -877,6 +871,115 @@ class BaspiLnhrdac2Fast2d(InstrumentModule):
         self.__current_config = config
 
         print("Fast adaptive 2D scan sucessfully configured. Ready to start.")
+
+    #-------------------------------------------------
+
+    def __get_2d_trigger_channel(self) -> int:
+        """
+        
+        """
+
+        if self.__awg_trig == "c":
+            self.parent.awgc.locked = False
+            channel = self.parent.awgc.channel.get()
+            self.parent.awgc.locked = True
+        else:
+            channel = self.parent.awgc.channel.get()
+
+        return channel
+
+    #-------------------------------------------------
+
+    def __set_2d_trigger_channel(self, channel: int) -> None:
+        """
+        
+        """
+
+        if self.__awg_trig == "c":
+            self.parent.awgc.locked = False
+            self.parent.awgc.channel.set(channel)
+            self.parent.awgc.locked = True
+        else:
+            self.parent.awgc.channel.set(channel)
+
+    #-------------------------------------------------
+
+    def __set_2d_trigger(self, mode: str) -> None:
+        """
+        
+        """
+
+        print("Starting to configure fast 2D scan trigger. AWG C might be repurposed. AWG C and AWG D connot be used while the point to point trigger output is running.")
+        
+        fast2d_triggers = (
+            "disable",
+            "line in",
+            "line out",
+            "point out"
+        )
+
+        if mode not in fast2d_triggers:
+            raise ValueError(f"Value '{mode}' is invalid. Valid values are: {fast2d_triggers}.")
+
+        if self.__current_config == None:
+            raise SystemError(f"No fast 2D scan configuration available. Set configuration parameter first.")
+        
+        if self.__controller.get_awg_run_state("a") \
+        or self.__controller.get_ramp_state("a") == 1 \
+        or self.__controller.get_awg_run_state("b") \
+        or self.__controller.get_ramp_state("b") == 1:
+            raise SystemError(f"During the setup of the fast adaptive 2D scan trigger, all AWGs must not run.")
+
+        self.parent.awga.locked = False
+        self.parent.awgc.locked = False
+        self.parent.awgd.locked = False
+        if mode == "disable":
+            self.__awg_trig = None
+            self.parent.awga.trigger.set("disable")
+            self.__controller.set_awg_start_mode(self.__awg_xy, 1)
+            print(f"Fast 2D scan trigger now set to '{mode}'.")
+            if self.__awg_xy == "a":
+                self.parent.awga.locked = True
+        elif mode == "line in":
+            self.__awg_trig = None
+            self.parent.awga.trigger.set("start only")
+            self.__controller.set_awg_start_mode(self.__awg_xy, 0)
+            print(f"Trigger mode '{mode}' cannot access channel {self.parent.fast2d.trigger_channel.get()}. Use 'Trig In AWG A' instead.")
+            self.parent.awga.locked = True
+        elif mode == "line out":
+            self.__awg_trig = None
+            self.parent.awga.trigger.set("disable")
+            self.__controller.set_awg_start_mode(self.__awg_xy, 1)
+            print(f"Trigger mode '{mode}' cannot access channel {self.parent.fast2d.trigger_channel.get()}. Use 'Sync Out AWG A' instead.")
+            if self.__awg_xy == "a":
+                self.parent.awga.locked = True
+        elif mode == "point out":
+            # choosing AWG for trigger
+            if not self.__controller.get_awg_run_state("c") \
+            and not self.__controller.get_awg_run_state("d"):
+                self.__awg_trig = "c"
+            else:
+                raise SystemError(f"During the setup of the fast 2D scan point by point trigger output, AWG C and D must not run.")
+
+            # trigger signal must have 1/2 of sweeping frequency
+            trig_config = BaspiLnhrdac2SWGConfig(
+                shape = "rectangle",
+                frequency = float(1.0 / self.__current_config.acquisition_delay),
+                amplitude = 2.5,
+                offset = 2.5
+            )
+                       
+            self.parent.swg.configuration.set(trig_config)
+            self.parent.swg.apply("C")
+            self.parent.awgc.cycles.set(self.__current_config.y_steps)
+            self.parent.awgc.trigger.set("start only")
+            if self.__awg_xy == "a":
+                self.parent.awga.locked = True
+            self.parent.awgc.locked = True
+            self.parent.awgd.locked = True
+
+            print(f"Trigger mode '{mode}' requires a physical connection inbetween the devices 'Sync Out AWG A' and 'Trig In AWG C' outputs.")
+            print(f"Fast 2D scan trigger now set to '{mode}', using DAC channel {self.parent.fast2d.trigger_channel.get()}.")
 
     #-------------------------------------------------
 
@@ -909,7 +1012,11 @@ class BaspiLnhrdac2Fast2d(InstrumentModule):
             self.parent.awga.locked = False
             waveform = self.parent.awga.waveform.get()
             self.parent.awga.locked = True
-            return waveform
+
+            # delete last element (returns to starting value)
+            waveform = list(waveform)
+            waveform.pop()
+            return array(waveform)
         else:
             return array([], dtype = float)
         
@@ -983,6 +1090,21 @@ class BaspiLnhrdac2(VisaInstrument):
             all_channels.append(channel)
 
         self.add_submodule("all", all_channels)
+
+        if self.number_channels == 24:
+            lower_board = ChannelList(self, "lower board", BaspiLnhrdac2Channel)
+            for channel_number in range(1, 12 + 1):
+                channel = channels[f"ch{channel_number}"]
+                lower_board.append(channel)
+
+            self.add_submodule("lower_board", lower_board)
+
+            higher_board = ChannelList(self, "higher board", BaspiLnhrdac2Channel)
+            for channel_number in range(13, 24 + 1):
+                channel = channels[f"ch{channel_number}"]
+                higher_board.append(channel)
+
+            self.add_submodule("higher board", higher_board)
 
         # AWGs dependent on 12/24 channel version
         if self.number_channels == 12:
