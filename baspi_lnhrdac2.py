@@ -246,7 +246,7 @@ class BaspiLnhrdac2AWG(InstrumentModule):
     @staticmethod
     def __get_parser_awg_sampling_rate(val: int) -> float:
         """
-        
+        Parsing method to convert the AWG sampling rate from us (micro seconds) to s (seconds).
         """
 
         return round(val / 1000000, 6)
@@ -256,7 +256,7 @@ class BaspiLnhrdac2AWG(InstrumentModule):
     @staticmethod
     def __set_parser_awg_sampling_rate(val: float) -> int:
         """
-        
+        Parsing method to convert the AWG sampling rate from s (seconds) to us (micro seconds).
         """
         
         return int(val * 1000000)
@@ -265,7 +265,13 @@ class BaspiLnhrdac2AWG(InstrumentModule):
 
     def __get_awg_time_axis(self, awg: str) -> list[float]:
         """
-        
+        Automatically creates the time axis for the saved waveform.
+
+        Parameters:
+        awg: selected AWG 
+
+        returns:
+        list: list of time values for each voltage saved in the AWG waveform in s
         """
 
         board = {"a": "ab", "b": "ab", "c": "cd", "d": "cd"}
@@ -832,7 +838,22 @@ class BaspiLnhrdac2Fast2d(InstrumentModule):
 
     def __set_2d_configuration(self, config: BaspiLnhrdac2Fast2dConfig) -> None:
         """
-        
+        Create an adaptive fast 2D-scan.
+
+        config-Attributes:
+        x_channel: channel of the x-axis (1 - 12)
+        x_start_voltage: starting voltage of the x-axis in V (+/- 10.000000 V)
+        x_stop_voltage: ending voltage of the x-axis in V (+/- 10.000000 V)
+        x_steps: number of steps the x-axis voltage is incremented
+        y_channel: channel of the y-axis (1 - 12)
+        y_start_voltage: starting voltage of the x-axis in V (+/- 10.000000 V)
+        y_stop_voltage: ending voltage of the x-axis in V (+/- 10.000000 V)
+        y_steps: number of steps the y-axis voltage is incremented
+        acquisition_delay: time for which each voltage step is outputted in s
+        adaptive_shift: voltage shift in V which is applied to the x-axis, after every y-axis sweep (+/- 10.000000 V)
+
+        Parameters:
+        config: object containing 2D scan configuration
         """
 
         print("Starting to configure fast adaptive 2D scan. AWG A will be repurposed. AWG A and AWG B connot be used while the 2D scan is running.")
@@ -904,7 +925,11 @@ class BaspiLnhrdac2Fast2d(InstrumentModule):
 
     def __get_2d_trigger_channel(self) -> int:
         """
-        
+        Gets the channel on which the point to point trigger is outputted. 
+        Only works for trigger mode "point out", for other modes use outputs on the back of the DAC.
+
+        Returns:
+        int: "point out" trigger output (13 ... 24)
         """
 
         if self.__awg_trig == "c":
@@ -920,7 +945,11 @@ class BaspiLnhrdac2Fast2d(InstrumentModule):
 
     def __set_2d_trigger_channel(self, channel: int) -> None:
         """
-        
+        Select the channel on which the point to point trigger is outputted. 
+        Only works for trigger mode "point out", for other modes use outputs on the back of the DAC.
+
+        Parameters:
+        channel: select "point out" trigger output (13 ... 24)
         """
 
         if self.__awg_trig == "c":
@@ -934,7 +963,12 @@ class BaspiLnhrdac2Fast2d(InstrumentModule):
 
     def __set_2d_trigger(self, mode: str) -> None:
         """
-        
+        Set the trigger mode of fast 2D-scan.
+         
+        Parameters:
+        mode: "disable": no trigger/ scan as fast as possible, "line in": external trigger starts every x-axis sweep, 
+                "line out": trigger is set with every x-axis sweep, "point out": trigger is set with every x-axis step
+       
         """
 
         print("Starting to configure fast 2D scan trigger. AWG C might be repurposed. AWG C and AWG D connot be used while the point to point trigger output is running.")
@@ -1013,7 +1047,10 @@ class BaspiLnhrdac2Fast2d(InstrumentModule):
 
     def __get_2d_x_axis(self) -> ndarray:
         """
-        
+        Get the x-axis voltage steps which are outputted in a x-axis sweep.
+
+        Returns:
+        ndarray: numpy array with voltage steps in V (+/- 10.000000 V)
         """
 
         if self.__awg_xy == "a":
@@ -1033,7 +1070,10 @@ class BaspiLnhrdac2Fast2d(InstrumentModule):
 
     def __get_2d_y_axis(self) -> ndarray:
         """
-        
+        Get the y-axis voltage steps which are outputted in a y-axis sweep.
+
+        Returns:
+        ndarray: numpy array with voltage steps in V (+/- 10.000000 V)
         """
 
         if self.__awg_xy == "a":
@@ -1052,7 +1092,10 @@ class BaspiLnhrdac2Fast2d(InstrumentModule):
 
     def __set_2d_enable(self, enable: bool) -> None:
         """
-        
+        Start or stop the fast 2D-scan by software.
+
+        Parameters:
+        enable: start or stop 2D-scan
         """
 
         if enable:
