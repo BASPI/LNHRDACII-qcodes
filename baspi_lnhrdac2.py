@@ -49,7 +49,7 @@ class BaspiLnhrdac2LockingValidator(validate.Validator):
 
     def validate(self, value: any, context = "BaspiLnhrdac2LockingValidator") -> None:
         """
-        Validates if the locked-attribute is False.
+        Validates if the locked-attribute is False. 
         """
 
         if self.submodule.locked:
@@ -69,9 +69,9 @@ class BaspiLnhrdac2Channel(InstrumentChannel):
         Class that defines a channel of the LNHR DAC II with all its QCoDeS-parameters.
 
         Channel-Parameters:
-        Voltage (-10.0 V ... +10.0 V)
-        High Bandwidth (ON/True: 100 kHz, OFF/False: 100 Hz)
-        Status (ON/True: channel on, OFF/False: channel off)
+        voltage (-10.0 V ... +10.0 V)
+        high_bandwidth (ON/True: 100 kHz, OFF/False: 100 Hz)
+        enable (ON/True: channel on, OFF/False: channel off)
 
         Parameters:
         parent: instrument this channel is a part of
@@ -123,12 +123,16 @@ class BaspiLnhrdac2AWG(InstrumentModule):
         Class which defines an AWG (Arbitrary Waveform Generator) of the LNHR DAC II with all its QCoDeS-parameters.
 
         AWG-Parameters:
-        awg_channel: channel/output the AWG gets routed to
-        awg_cycles: number of cycles/repetitions the device outputs before stopping
-        swg: Standard Waveform Generator used to quickly create simple signals
-        waveform: holds the values that will be outputted by the AWG using numpy arrays
-        time_axis: holds the time-axis values of the waveform parameter using numpy arrays
-        trigger: AWG external trigger mode
+        channel (1 ... 12 or 13 ... 24, selecting AWG output)
+        cycles (0 ... 4 000 000 000, amount of times the waveform is repeated)
+        sampling_rate (0.000 01 s ... 4 000 s)
+        length (0 ... 34 000, amount of data points)
+        time_axis (gets automatically created, depending on AWG settings)
+        waveform (-10.000000 V ... +10.000000 V)
+        trigger (disable: no external trigger, start only: external trigger starts AWG waveform, 
+                start stop: AWG is started by a positive signal edge and stopped by a negative signal edge, 
+                single step: positive signal edge triggers every point of the waveform)
+        enable (ON/True: start AWG, OFF/False: stop AWG)
 
         Parameters:
         parent: instrument this channel is a part of
@@ -367,7 +371,7 @@ class BaspiLnhrdac2SWGConfig():
     """
     Dataclass to pass a configuration of the LNHR DAC II SWG module.
 
-    Attributes: 
+    Properties: 
     shape: "sine", "cosine, "triangle", "sawtooth", "ramp", "rectangle", "pulse", "fixed noise", "random noise" or "DC"
     frequency: signal frequency in Hz (0.001 Hz - 10000 Hz)
     amplitude: signal amplitude in V (+/- 10.000 V)
@@ -465,10 +469,11 @@ class BaspiLnhrdac2SWG(InstrumentModule):
     def __init__(self, parent: VisaInstrument, name: str, controller: BaspiLnhrdac2Controller):
         """
         Class defining the Standard Waveform Generator (SWG) module of the LNHR DAC II with all its Qcodes Parameters.
+        The SWG can be used to create a waveform, which is then outputted by an AWG.
 
         SWG-Parameters:
-        configuration: 
-        apply: 
+        configuration (object of type BaspiLnhrdac2SWGConfig, to configure the SWG)
+        apply (A, B, C or D, applies the configured waveform and saves it to the AWG A, B, C or D)
 
         Parameters:
         parent: instrument this channel is a part of
@@ -603,8 +608,17 @@ class BaspiLnhrdac2Fast2dConfig():
     """
     Dataclass to pass a configuration of the LNHR DAC II Fast Scan 2D module.
 
-    Attributes:
-    
+    Properties:
+    x_channel: channel of the x-axis (1 - 12)
+    x_start_voltage: starting voltage of the x-axis in V (+/- 10.000000 V)
+    x_stop_voltage: ending voltage of the x-axis in V (+/- 10.000000 V)
+    x_steps: number of steps the x-axis voltage is incremented
+    y_channel: channel of the y-axis (1 - 12)
+    y_start_voltage: starting voltage of the x-axis in V (+/- 10.000000 V)
+    y_stop_voltage: ending voltage of the x-axis in V (+/- 10.000000 V)
+    y_steps: number of steps the y-axis voltage is incremented
+    acquisition_delay: time for which each voltage step is outputted in s
+    adaptive_shift: voltage shift in V which is applied to the x-axis, after every y-axis sweep (+/- 10.000000 V)
     """
     
     x_channel: int
@@ -750,7 +764,21 @@ class BaspiLnhrdac2Fast2d(InstrumentModule):
                  name: str, 
                  controller: BaspiLnhrdac2Controller):
         """
-        
+        Class which defines an adaptive fast 2D-scan of the LNHR DAC II with all its QCoDeS-parameters.
+
+        2D-scan-Parameters:
+        configuration (object of type BaspiLnhrdac2Fast2dConfig, to configure the fast 2D-scan)
+        trigger_channel (13 ... 24, selecting a channel if the point out mode is used)
+        trigger (disable: no trigger/ scan as fast as possible, line in: external trigger starts every x-axis sweep, 
+                line out: trigger is set with every x-axis sweep, point out: trigger is set with every x-axis step)
+        x_axis (voltages in V of x-axis sweep, only gettable)
+        y_axis (voltages in V of y-axis sweep, only gettable)
+        enable (ON/True: start fast 2D-scan, OFF/False: stop fast 2D-scan)
+
+        Parameters:
+        parent: instrument this channel is a part of
+        name: name of the channel
+        controller: the controller the instrument uses for its communication
         """
 
         super().__init__(parent, name)
