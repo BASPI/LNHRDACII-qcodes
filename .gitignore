@@ -5,7 +5,7 @@ __pycache__
 BasPI LNHR DAC demo
 
 # files
-Baspi_Lnhrdac2_old.py
+Baspi_Lnhrdac2_old_backup.py
 qcodes_examples.ipynb
 qcodes_gate_parameters.py
 restructuring_test_simplyfied.py
