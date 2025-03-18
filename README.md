@@ -1,22 +1,24 @@
 # LNHR DAC II QCoDeS Driver
-This repository contains the QCoDeS driver for the Basel Precision Instruments *Low Noise High Resolution Digital to Analog Converter II* or *LNHR DAC II*. Additionally there are some examples on how to use the driver.
+This repository contains the QCoDeS driver for the Basel Precision Instruments Low Noise High Resolution Digital to Analog Converter II or LNHR DAC II. Additionally there are some examples on how to use the driver.
 
-## Latest Release
-The latest version of this driver is v0.1.1.
+## Latest Version
+The latest version of this driver is v0.2.0.
 
 **What's new?**
-- We greatly improved the general code documentation.
-- We now provide some examples for you in the  form of a Jupyter Notebook. It should help with understanding and setting up our QCoDeS driver.
-- Names of files and methods have been changed to better fall in line with the general QCoDeS guidelines, while the old method names still work.
-- The `write` method has been improved. It now does a simple handshaking with the DAC and raises an error if the DAC could not process a command. It also implements some necessary delays to avoid race conditions.
+- This is a complete revamp of our QCoDeS driver. There is not a lot which stayed the same since v0.1.1. Everything is coded with the aim to create the easiest user experience possible. 
+- The most import functions of the LNHR DAC II are now easily accessible through QCoDeS parameters:
+    - Voltage, Bandwith and Enable of each channel
+    - Arbitrary Waveform Generator (AWG), configurable through either manually setting points or using the Standard Waveform Generator (SWG) for fast creation of simple waveforms (sine, triangle, pulse, white noise and more)
+    - Fast adaptive 2D-scan, with sampling rates as fast as 10 &mu;s per point, configurable through vrey easy to understand QCoDeS parameters
 
-This version of the driver aims to be a one by one replacement for the original version of the driver. Make sure to change the the filenames in the import section of your code. If you have any issues with that, please use the GitHub issue tracker to report it, or get in contact with us.
+
+This version of the driver aims not to be a one by one replacement for the earlier versions of the driver. We recommend starting a new project if you are using this version of the driver. Make sure to check out the example Notebooks to get started. If you have any issues with the driver, please use the GitHub issue tracker to report it, or get in contact with us.
 
 ## Setup
-This code is an improved version of the original Basel Precision Instruments LNHR DAC II QCoDeS driver. Everything should be backwards compatible. `baspi_lnhrdac2.py`replaces the old `DAC_1060_v060723.py`and `qcodes_gate_parameters.py`replaces the old `Parameterhelp_240709.py`. Additionally `qcodes_examples.ipynb` gives some examples on how the driver can be used. Copy the files into your project folder and change the filenames in the import section of your code to run this new experimental pre-release of the QCoDeS driver.
+Download `Baspi_Lnhrdac2.py` and `Baspi_Lnhrdac2_Controller.py` and copy it to your project folder. `qcodes_examples.ipynb` gives some examples on how the driver can be used.
 
 ## Older Releases
-If you want to use an older version of our driver, you can find them in the Releases tab of this repository.
+If you want to use an older version of our driver, you can find them in the Releases tab of this repository. Be advised that everything before v0.2.0 is vastly different than everything after v0.2.0. 
 
 ## Further Documentation
 See https://www.baspi.ch/manuals for more information on the LNHR DAC II.

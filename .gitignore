@@ -3,8 +3,11 @@ __pycache__
 
 # folders
 BasPI LNHR DAC demo
+graphics
 
 # files
-restructuring_test.py
-restructuring_test_simplyfied.py
 Baspi_Lnhrdac2_old_backup.py
+new_qcodes_showcase.ipynb
+qcodes_gate_parameters.py
+restructuring_test_simplyfied.py
+fast_2D_scan_example_qcodes.ipynb
