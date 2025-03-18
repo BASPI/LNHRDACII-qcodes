@@ -6,6 +6,6 @@ BasPI LNHR DAC demo
 
 # files
 Baspi_Lnhrdac2_old_backup.py
-qcodes_examples.ipynb
+new_qcodes_showcase.ipynb
 qcodes_gate_parameters.py
 restructuring_test_simplyfied.py
