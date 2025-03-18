@@ -15,7 +15,7 @@ The latest version of this driver is v0.2.0.
 This version of the driver aims not to be a one by one replacement for the earlier versions of the driver. We recommend starting a new project if you are using this version of the driver. Make sure to check out the example Notebooks to get started. If you have any issues with the driver, please use the GitHub issue tracker to report it, or get in contact with us.
 
 ## Setup
-Download `Baspi_Lnhrdac2.py` and copy it to your project folder. `qcodes_examples.ipynb` gives some examples on how the driver can be used.
+Download `Baspi_Lnhrdac2.py` and `Baspi_Lnhrdac2_Controller.py` and copy it to your project folder. `qcodes_examples.ipynb` gives some examples on how the driver can be used.
 
 ## Older Releases
 If you want to use an older version of our driver, you can find them in the Releases tab of this repository. Be advised that everything before v0.2.0 is vastly different than everything after v0.2.0. 
