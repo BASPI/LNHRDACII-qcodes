@@ -9,7 +9,9 @@ The latest version of this driver is v0.2.0.
 - The most import functions of the LNHR DAC II are now easily accessible through QCoDeS parameters:
     - Voltage, Bandwith and Enable of each channel
     - Arbitrary Waveform Generator (AWG), configurable through either manually setting points or using the Standard Waveform Generator (SWG) for fast creation of simple waveforms (sine, triangle, pulse, white noise and more)
-    - Fast adaptive 2D-scan, with sampling rates as fast as 10 &mu;s per point, configurable through vrey easy to understand QCoDeS parameters
+    - Fast adaptive 2D-scan, with sampling rates as fast as 10 &mu;s per point, configurable through very easy to understand QCoDeS parameters. THe video below shows an adaptive fast 2D-scan with 50000 points at live speed, done by the LNHRDAC II
+ 
+https://github.com/user-attachments/assets/de2fac24-d2c0-4c25-9fb7-104f3bedb5a8
 
 
 This version of the driver aims not to be a one by one replacement for the earlier versions of the driver. We recommend starting a new project if you are using this version of the driver. Make sure to check out the example Notebooks to get started. If you have any issues with the driver, please use the GitHub issue tracker to report it, or get in contact with us.
