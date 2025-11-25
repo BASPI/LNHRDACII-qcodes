@@ -12,6 +12,8 @@ The latest version of this driver is v0.2.1.
     - Fast adaptive 2D-scan, with sampling rates as fast as 10 &mu;s per point, configurable through very easy to understand QCoDeS parameters. The video below shows an adaptive fast 2D-scan with 50000 points at live speed, done by the LNHRDAC II
  
 https://github.com/user-attachments/assets/de2fac24-d2c0-4c25-9fb7-104f3bedb5a8
+
+
 **NOW NEW**
 - Reconnect Function
   after the connection has been lost, you are now able to reconnect to the DAC II without setting every channel off and all voltages to zero
