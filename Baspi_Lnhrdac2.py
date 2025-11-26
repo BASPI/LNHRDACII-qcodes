@@ -897,7 +897,7 @@ class BaspiLnhrdac2Fast2d(InstrumentModule):
         # set up y-axis
         y_axis_waveform = []
         for step in range(0, config.y_steps + 1):
-            y_axis_waveform.append(step * y_step_size)
+            y_axis_waveform.append((step * y_step_size) + config.y_start_voltage)
         y_axis_waveform.append(config.y_start_voltage)
         y_axis_waveform = array(y_axis_waveform)
 
