@@ -15,7 +15,7 @@ https://github.com/user-attachments/assets/de2fac24-d2c0-4c25-9fb7-104f3bedb5a8
 
 
 **NOW NEW**
-- Reconnect Function
+- Reconnect Function ():
   after the connection has been lost, you are now able to reconnect to the DAC II without setting every channel off and all voltages to zero
 
 This version of the driver aims not to be a one by one replacement for the earlier versions of the driver. We recommend starting a new project if you are using this version of the driver. Make sure to check out the example Notebooks to get started. If you have any issues with the driver, please use the GitHub issue tracker to report it, or get in contact with us.
