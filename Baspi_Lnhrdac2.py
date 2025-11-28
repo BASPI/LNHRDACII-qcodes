@@ -1230,6 +1230,133 @@ class BaspiLnhrdac2(VisaInstrument):
         }
 
         return idn
+    
+    # ------------------------------------------------------------
+    def reconnect(
+        self,
+        attempts: int = 10,
+        wait_between_attempts: float = 5.0 ) -> "BaspiLnhrdac2":
+        """
+        Re-open the VISA/Telnet connection to the LNHR DAC II without
+        changing any DAC settings on the device.
+
+        This is intended for cases where the software connection was lost
+        (timeouts, Telnet restart) but the instrument itself
+        stayed powered on. It does not restore the state after a power
+        cycle of the instrument or after the IDE crashed.
+
+        Parameters
+        ----------
+        attempts : int
+            How many times the driver should retry the whole reconnect
+            sequence (open VISA + IDN query). Must be >= 1.
+        wait_between_attempts : float
+            Delay in seconds between reconnect attempts. Must be >= 0.
+        """
+
+        # validate input
+        if attempts < 1:
+            attempts = 1
+        if wait_between_attempts < 0:
+            wait_between_attempts = 0.0
+
+        # reminder reconnect
+        print(
+            "\n[BaspiLnhrdac2.reconnect] Please make sure that on the LNHR DAC II "
+            "the Telnet server has been restarted "
+            "('Restart Telnet now!', you can find it under 'Restart the device' in the main menu). \n "
+            "before or during reconnect().\n"
+        )
+
+        # get address and visalib
+        address = getattr(self, "_address", None)
+        if address is None:
+            address = getattr(self, "address", None)
+        visalib = getattr(self, "visalib", None)
+
+        if address is None:
+            raise RuntimeError(
+                "BaspiLnhrdac2.reconnect(): cannot determine VISA address "
+                "(self._address / self.address is None)."
+            )
+
+        # close previous session, if socket was not closed properly
+        old_handle = getattr(self, "visa_handle", None)
+        if old_handle is not None:
+            try:
+                old_handle.close()
+            except Exception:
+                # ignore error and just try to reopen
+                pass
+
+        last_exc: Exception | None = None
+
+        # reconnect in a loop 
+        for attempt in range(1, attempts + 1):
+            try:
+                # new visa rescource
+                visa_handle, visabackend, resource_manager = self._open_resource(
+                    address, visalib
+                )
+
+                # install new handles in the existing instrument
+                self.visa_handle = visa_handle
+                self.visabackend = visabackend
+                self.resource_manager = resource_manager
+
+                # restore terminations for dac
+                self.visa_handle.write_termination = "\r\n"
+                self.visa_handle.read_termination = "\r\n"
+
+                # get idn to verify connection
+                idn = self.get_idn()
+
+                # confirmation that everything worked
+                try:
+                    model = idn.get("model", "unknown model")
+                    serial = idn.get("serial", "unknown serial")
+                    firmware = idn.get("firmware", "unknown firmware")
+                    print(
+                        f"[BaspiLnhrdac2.reconnect] Successfully reconnected to "
+                        f"{model}, S/N {serial}, FW {firmware}."
+                    )
+                except Exception:
+                    pass
+
+                return self
+
+            except Exception as exc:
+                last_exc = exc
+
+                # trys to close any half opened sockets
+                handle = getattr(self, "visa_handle", None)
+                if handle is not None:
+                    try:
+                        handle.close()
+                    except Exception:
+                        pass
+
+                if attempt < attempts:
+                    print(
+                        f"[BaspiLnhrdac2.reconnect] Reconnect attempt "
+                        f"{attempt}/{attempts} failed.\n"
+                        "Please now ensure that the Telnet server on the LNHR DAC II "
+                        "has been restarted.\n"
+                        f"Waiting {wait_between_attempts:.1f} s before the next try...\n"
+                    )
+                    sleep(wait_between_attempts)
+                else:
+                    # no more attempts left, give notification and reason to error
+                    raise RuntimeError(
+                        "BaspiLnhrdac2.reconnect(): all reconnect attempts failed.\n"
+                        "Please check:\n"
+                        "  - The Telnet server on the LNHR DAC II has been restarted "
+                        "    ('Restart Telnet now!', you can find it under 'Restart the device' in the main menu).\n"
+                        "  - The device is powered on and reachable on the network.\n"
+                    ) from last_exc
+
+        # should never reach here
+        return self
 
 
 # main -----------------------------------------------------------------
