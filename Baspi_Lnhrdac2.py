@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------------------------------------------------------------------------
 # LNHR DAC II QCoDeS driver
-# v0.2.1 
-# Copyright (c) Basel Precision Instruments AG (2025)
+# v0.3.0
+# Copyright (c) Basel Precision Instruments AG (2026)
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the 
 # Free Software Foundation, either version 3 of the License, or any later version. This program is distributed in the hope that it will be 
@@ -22,7 +22,8 @@ import qcodes.validators as validate
 from numpy import ndarray, array
 from functools import partial
 from dataclasses import dataclass
-from time import sleep
+from inspect import signature
+from time import sleep, perf_counter
 
 # logging --------------------------------------------------------------
 
@@ -89,24 +90,21 @@ class BaspiLnhrdac2Channel(InstrumentChannel):
             set_cmd = partial(controller.set_channel_dacvalue, channel),
             get_parser = BaspiLnhrdac2Controller.dacval_to_vval,
             set_parser = BaspiLnhrdac2Controller.vval_to_dacval,
-            vals = validate.Numbers(min_value = -10.0, max_value = 10.0),
-            initial_value = 0.0
+            vals = validate.Numbers(min_value = -10.0, max_value = 10.0)
         )
 
         self.high_bandwidth = self.add_parameter(
             name = "high_bandwidth",
             get_cmd = partial(controller.get_channel_bandwidth, channel),
             set_cmd = partial(controller.set_channel_bandwidth, channel),
-            val_mapping = create_on_off_val_mapping(on_val = "HBW", off_val = "LBW"),
-            initial_value = False
+            val_mapping = create_on_off_val_mapping(on_val = "HBW", off_val = "LBW")
         )
 
         self.enable = self.add_parameter(
             name = "enable",
             get_cmd = partial(controller.get_channel_status, channel),
             set_cmd = partial(controller.set_channel_status, channel),
-            val_mapping = create_on_off_val_mapping(on_val = "ON", off_val = "OFF"),
-            initial_value = False
+            val_mapping = create_on_off_val_mapping(on_val = "ON", off_val = "OFF")
         )
 
 
@@ -168,8 +166,7 @@ class BaspiLnhrdac2AWG(InstrumentModule):
             vals = validate.MultiTypeAnd(
                 validate.Ints(min_value = 0, max_value = 4000000000),
                 BaspiLnhrdac2LockingValidator(self)
-            ),
-            initial_value = 0
+            )
         )
 
         self.sampling_rate = self.add_parameter(
@@ -225,8 +222,7 @@ class BaspiLnhrdac2AWG(InstrumentModule):
             get_cmd = partial(controller.get_awg_trigger_mode, awg),
             set_cmd = partial(controller.set_awg_trigger_mode, awg),
             val_mapping = {"disable": 0, "start only": 1, "start stop": 2, "single step": 3},
-            vals = BaspiLnhrdac2LockingValidator(self),
-            initial_value = "disable"
+            vals = BaspiLnhrdac2LockingValidator(self)
         )
 
         self.enable = self.add_parameter(
@@ -235,8 +231,7 @@ class BaspiLnhrdac2AWG(InstrumentModule):
             set_cmd = partial(controller.set_awg_start_stop, awg),
             get_parser = BaspiLnhrdac2AWG.__get_parser_awg_enable,
             val_mapping = create_on_off_val_mapping(on_val = "START", off_val = "STOP"),
-            vals = BaspiLnhrdac2LockingValidator(self),
-            initial_value = False
+            vals = BaspiLnhrdac2LockingValidator(self)
         )
 
         board = None
@@ -1106,10 +1101,16 @@ class BaspiLnhrdac2Fast2d(InstrumentModule):
                 self.parent.awgb.locked = True
                 print(f"Fast adaptive 2D scan started with configuration {self.__current_config}.")
         elif self.__awg_xy == "a":
+            self.parent.awga.locked = False
+            self.parent.awga.enable.set(False)
+            self.parent.awgb.locked = False
+            if self.__awg_trig == "c":
+                self.parent.awgc.locked = False
+                self.parent.awgd.locked = False
+                self.parent.awgc.enable.set(False)
+                self.__awg_trig = None
             self.__awg_xy = None
             self.__current_config = None
-            self.parent.awga.locked = False
-            self.parent.awgb.locked = False
             print(f"Fast adaptive 2D scan stopped. All AWGs can be used normally again.")
             
 
@@ -1117,7 +1118,7 @@ class BaspiLnhrdac2Fast2d(InstrumentModule):
 
 class BaspiLnhrdac2(VisaInstrument):
     
-    def __init__(self, name: str, address: str):
+    def __init__(self, name: str, address: str, reset_outputs: bool | None = None):
         """
         Main class for integrating the Basel Precision Instruments 
         LNHR DAC II into QCoDeS as an instrument.
@@ -1125,84 +1126,116 @@ class BaspiLnhrdac2(VisaInstrument):
         Parameters:
         name: name of the instrument
         address: VISA address of the instrument
+            reset_outputs: required, no default
+            True:   stop all AWGs and the fast 2D-scan, switch all channels OFF, set 0 V and low bandwidth
+            False:  connect read-only and adopt the present device state
         """
 
+        if reset_outputs is None:
+            raise ValueError("reset_outputs must be set explicitly:\n" \
+            "   -reset_outputs = True -> stop all AWGs, switch all channels OFF and set them to 0 V\n" \
+            "   -reset_outputs = False -> connect without writing onto the DAC II, adopt present state\n" \
+            "Use False when reconnecting after a PC crash.")
+        if not (isinstance(reset_outputs, bool)):
+            raise ValueError(f"reset_outputs must be True or False, got {reset_outputs!r}.")
+
         super().__init__(name, address)
+        self.__address = address
 
-        # "library" of all DAC commands
-        # not to be used outside of this class definition
-        # to only have a single interface to the device
-        self.__controller = BaspiLnhrdac2Controller(self)
+        try:
 
-        # visa properties for communication
-        self.visa_handle.write_termination = "\r\n"
-        self.visa_handle.read_termination = "\r\n"
+            # "library" of all DAC commands
+            # not to be used outside of this class definition
+            # to only have a single interface to the device
+            self.__controller = BaspiLnhrdac2Controller(self)
 
-        # get number of physicallly available channels
-        # for correct further initialization
-        channel_modes = self.__controller.get_all_mode()
-        self.number_channels = len(channel_modes)
-        if self.number_channels != 12 and self.number_channels != 24:
-            raise SystemError("Physically available number of channels is not 12 or 24. Please check device.")
+            # visa properties for communication
+            self.visa_handle.write_termination = "\r\n"
+            self.visa_handle.read_termination = "\r\n"
 
-        # create channels and add to instrument
-        # save references for later grouping
-        channels = {}
-        for channel_number in range(1, self.number_channels + 1):
-            name = f"ch{channel_number}"
-            channel = BaspiLnhrdac2Channel(self, name, channel_number, self.__controller)
-            channels.update({name: channel})
-            self.add_submodule(name, channel)
+            # get number of physicallly available channels
+            # for correct further initialization
+            channel_modes = self.__controller.get_all_mode()
+            self.number_channels = len(channel_modes)
+            if self.number_channels != 12 and self.number_channels != 24:
+                raise SystemError("Physically available number of channels is not 12 or 24. Please check device.")
 
-        # grouping channels to simplify simoultaneous access
-        all_channels = ChannelList(self, "all channels", BaspiLnhrdac2Channel)
-        for channel_number in range(1, self.number_channels + 1):
-            channel = channels[f"ch{channel_number}"]
-            all_channels.append(channel)
+            # create channels and add to instrument
+            # save references for later grouping
+            channels = {}
+            for channel_number in range(1, self.number_channels + 1):
+                name = f"ch{channel_number}"
+                channel = BaspiLnhrdac2Channel(self, name, channel_number, self.__controller)
+                channels.update({name: channel})
+                self.add_submodule(name, channel)
 
-        self.add_submodule("all", all_channels)
-
-        if self.number_channels == 24:
-            lower_board = ChannelList(self, "lower board", BaspiLnhrdac2Channel)
-            for channel_number in range(1, 12 + 1):
+            # grouping channels to simplify simoultaneous access
+            all_channels = ChannelList(self, "all channels", BaspiLnhrdac2Channel)
+            for channel_number in range(1, self.number_channels + 1):
                 channel = channels[f"ch{channel_number}"]
-                lower_board.append(channel)
+                all_channels.append(channel)
 
-            self.add_submodule("lower_board", lower_board)
+            self.add_submodule("all", all_channels)
 
-            higher_board = ChannelList(self, "higher board", BaspiLnhrdac2Channel)
-            for channel_number in range(13, 24 + 1):
-                channel = channels[f"ch{channel_number}"]
-                higher_board.append(channel)
+            if self.number_channels == 24:
+                lower_board = ChannelList(self, "lower board", BaspiLnhrdac2Channel)
+                for channel_number in range(1, 12 + 1):
+                    channel = channels[f"ch{channel_number}"]
+                    lower_board.append(channel)
 
-            self.add_submodule("higher board", higher_board)
+                self.add_submodule("lower_board", lower_board)
 
-        # AWGs dependent on 12/24 channel version
-        if self.number_channels == 12:
-            awgs = ("a", "b")
-        elif self.number_channels == 24:
-            awgs = ("a", "b", "c", "d")
+                higher_board = ChannelList(self, "higher board", BaspiLnhrdac2Channel)
+                for channel_number in range(13, 24 + 1):
+                    channel = channels[f"ch{channel_number}"]
+                    higher_board.append(channel)
 
-        for awg_designator in awgs:
-            name = f"awg{awg_designator}"
-            awg = BaspiLnhrdac2AWG(self, name, awg_designator, self.__controller)
-            self.add_submodule(name, awg)
+                self.add_submodule("higher board", higher_board)
 
-        # only one SWG module available
-        name = "swg"
-        swg = BaspiLnhrdac2SWG(self, name, self.__controller)
-        self.add_submodule(name, swg)
+            # AWGs dependent on 12/24 channel version
+            if self.number_channels == 12:
+                awgs = ("a", "b")
+            elif self.number_channels == 24:
+                awgs = ("a", "b", "c", "d")
 
-        #  only one 2D scan module available
-        name = "fast2d"
-        fast2d = BaspiLnhrdac2Fast2d(self, name, self.__controller)
-        self.add_submodule(name, fast2d)
+            for awg_designator in awgs:
+                name = f"awg{awg_designator}"
+                awg = BaspiLnhrdac2AWG(self, name, awg_designator, self.__controller)
+                self.add_submodule(name, awg)
+            self.__awg_keys = awgs
+
+            # only one SWG module available
+            name = "swg"
+            swg = BaspiLnhrdac2SWG(self, name, self.__controller)
+            self.add_submodule(name, swg)
+
+            #  only one 2D scan module available
+            name = "fast2d"
+            fast2d = BaspiLnhrdac2Fast2d(self, name, self.__controller)
+            self.add_submodule(name, fast2d)
+
+            do_reset = reset_outputs
+            state = None if do_reset else self.read_device_state()
+
+            if do_reset:
+                self.reset_all_outputs()
+
+        except BaseException:
+            try:
+                self.close()
+            except Exception:
+                pass
+            raise
 
         # display some information after instanciation/ initial connection
         print("")
         self.connect_message()
-        print("All channels have been turned off (1 MOhm Pull-Down to AGND) upon initialization "
-              + "and are pre-set to 0.0 V if turned on without setting a voltage beforehand.")
+        if do_reset:
+            print("All channels have been turned off (1 MOhm Pull-Down to AGND) upon initialization "
+                  + "and are pre-set to 0.0 V if turned on without setting a voltage beforehand.")
+        else:
+            print("Connected without writing to the device. Present state adopted:")
+            self.print_device_state(state)
         print("")
 
     #-------------------------------------------------
@@ -1230,6 +1263,93 @@ class BaspiLnhrdac2(VisaInstrument):
         }
 
         return idn
+
+    #-------------------------------------------------    
+    def read_device_state(self) -> dict:
+        """
+        
+        """
+        state = {"channels": {}, "awgs": {}}
+
+        # a channel driven by an AWG answers "<AWG>" instead of a DAC value, so read the modes first
+        modes = [mode.strip() for mode in self.__controller.get_all_mode()]
+
+        for n in range (1, self.number_channels + 1):
+            ch = getattr(self, f"ch{n}")
+            state["channels"][n] = {
+                "mode": modes[n-1],
+                "voltage":  None if modes [n-1] == "AWG" else ch.voltage.get(),
+                "enable":   ch.enable.get(),
+                "high_bandwidth": ch.high_bandwidth.get(),
+            }
+
+        for key in self.__awg_keys:
+            awg = getattr(self, f"awg{key}")
+            state["awgs"][key] = {
+                "running":  awg.enable.get(),
+                "cycles": awg.cycles.get(),
+                "trigger": awg.trigger.get(),
+            }
+
+        return state
+
+
+    def print_device_state(self, state: dict | None = None) -> None:
+        """
+        
+        """
+        if state is None:
+            state = self.read_device_state()
+
+        shown = False
+        for n, ch in state["channels"].items():
+            if ch["voltage"] is None:
+                print(f" ch{n:<3} driven by {ch['mode']} "
+                      f"{'ON' if ch['enable'] else 'OFF'} "
+                      f"{'HBW' if ch['high_bandwidth'] else 'LBW'}")
+                shown = True
+            elif ch["enable"] or abs(ch["voltage"]) > 1e-5:
+                print(f" ch{n:<3} {ch['voltage'] + 0.0:+.6f} V "
+                      f"{'ON' if ch['enable'] else 'OFF'} "
+                      f"{'HBW' if ch['high_bandwidth'] else 'LBW'}")
+                shown = True
+        for key, awg in state["awgs"].items():
+            if awg["running"]:
+                print(f" AWG-{key.upper()} running (cycles={awg['cycles']}, trigger={awg['trigger']})")
+                shown = True
+        if not shown:
+            print(" all channels OFF at 0 V, no AWG running")
+
+
+    def reset_all_outputs(self) -> None:
+        """
+        
+        """
+        self.fast2d.enable.set(False)
+
+        for key in self.__awg_keys:
+            awg = getattr(self, f"awg{key}")
+            awg.locked = False
+            awg.enable.set(False)
+
+
+        deadline = perf_counter() + 5.0
+        while "AWG" in [mode.strip() for mode in self.__controller.get_all_mode()]:
+            if perf_counter() > deadline:
+                raise RuntimeError("Channels still in AWG mode 5 s after stopping all AWGs.")
+            sleep(0.05)
+        for n in range(1, self.number_channels + 1):
+            getattr(self, f"ch{n}").enable.set(False)
+
+        for n in range(1, self.number_channels + 1):
+            ch = getattr(self, f"ch{n}")
+            ch.voltage.set(0.0)
+            ch.high_bandwidth.set(False)
+
+        for key in self.__awg_keys:
+            awg = getattr(self, f"awg{key}")
+            awg.cycles.set(0)
+            awg.trigger.set("disable")
     
     # ------------------------------------------------------------
     def reconnect(
@@ -1268,17 +1388,7 @@ class BaspiLnhrdac2(VisaInstrument):
             "before or during reconnect().\n"
         )
 
-        # get address and visalib
-        address = getattr(self, "_address", None)
-        if address is None:
-            address = getattr(self, "address", None)
-        visalib = getattr(self, "visalib", None)
-
-        if address is None:
-            raise RuntimeError(
-                "BaspiLnhrdac2.reconnect(): cannot determine VISA address "
-                "(self._address / self.address is None)."
-            )
+        timeout = self.timeout.get_latest()
 
         # close previous session, if socket was not closed properly
         old_handle = getattr(self, "visa_handle", None)
@@ -1294,19 +1404,14 @@ class BaspiLnhrdac2(VisaInstrument):
         # reconnect in a loop 
         for attempt in range(1, attempts + 1):
             try:
-                # new visa rescource
-                visa_handle, visabackend, resource_manager = self._open_resource(
-                    address, visalib
-                )
+                if "visalib" in signature(self.set_address).parameters:
+                    self.set_address(self.__address, None)
+                else:
+                    self.set_address(self.__address)
 
-                # install new handles in the existing instrument
-                self.visa_handle = visa_handle
-                self.visabackend = visabackend
-                self.resource_manager = resource_manager
-
-                # restore terminations for dac
                 self.visa_handle.write_termination = "\r\n"
                 self.visa_handle.read_termination = "\r\n"
+                self.timeout.set(timeout)
 
                 # get idn to verify connection
                 idn = self.get_idn()
@@ -1366,5 +1471,5 @@ if __name__ == "__main__":
     # a little example on how to use this driver
 
     station = Station()
-    dac = BaspiLnhrdac2('LNHRDAC', 'TCPIP0::192.168.0.5::23::SOCKET')
+    dac = BaspiLnhrdac2('LNHRDAC', 'TCPIP0::192.168.0.5::23::SOCKET', reset_outputs= False)
     station.add_component(dac)
